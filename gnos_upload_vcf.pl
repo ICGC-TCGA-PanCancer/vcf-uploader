@@ -565,6 +565,12 @@ END
       }
     }
 
+  # TODO
+  # variant_pipeline_input_info
+
+  # TODO
+  # variant_pipeline_output_info
+
   # some metadata about this workflow
   $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
           <TAG>variant_workflow_name</TAG>
@@ -584,16 +590,16 @@ END
         </ANALYSIS_ATTRIBUTE>
 ";
 
-  # QC
+  # TODO QC
   $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>qc_metrics</TAG>
+          <TAG>variant_qc_metrics</TAG>
           <VALUE>" . &getQcResult() . "</VALUE>
         </ANALYSIS_ATTRIBUTE>
 ";
 
-  # Runtime
+  # TODO Runtime
   $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>timing_metrics</TAG>
+          <TAG>variant_timing_metrics</TAG>
           <VALUE>" . &getRuntimeInfo() . "</VALUE>
         </ANALYSIS_ATTRIBUTE>
 ";
@@ -823,6 +829,7 @@ sub getVals {
   return(@r);
 }
 
+# TODO: will need to be updated to support
 sub getRuntimeInfo {
   # detect all the timing files by checking file name pattern, read QC data
   # to pull back the read group and associate with timing
