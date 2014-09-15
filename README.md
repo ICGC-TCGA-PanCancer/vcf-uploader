@@ -44,7 +44,7 @@ An example:
 ## To Do
 
 * probably a good idea to unify this code with the BAM uploader to reduce code duplication
-* need to add params for various hard-coded items below so the same script can be used for multiple variant workflows
+* need to add params for various hard-coded items below so the same script can be used for multiple variant workflows. For example workflow name, version, etc
 * the description needs details about the files produced by the workflow, naming conventions, etc
 * need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
 * removed hard coded files and replace with templates
