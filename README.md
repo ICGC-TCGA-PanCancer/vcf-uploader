@@ -49,4 +49,4 @@ An example:
 * need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
 * removed hard coded files and replace with templates
 * support .gz vcf files, perhaps always make these if input is .vcf?
-* need to add support for runtime information files in a generic way
+* need to add support for runtime and qc information files in a generic way
