@@ -4,7 +4,7 @@
 
 This tool is designed to upload one or more VCF/tarball files produced during variant calling.
 
-This is a work in progress.
+This is a work in progress. See https://wiki.oicr.on.ca/display/PANCANCER/VCF+Upload+SOP for more information.
 
 ## Running
 
