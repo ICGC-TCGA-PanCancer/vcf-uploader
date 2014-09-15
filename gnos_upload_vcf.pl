@@ -14,6 +14,7 @@ use Time::Piece;
 #############################################################################################
 # This tool takes metadata URLs and VCF path(s). It then downloads metadata,                #
 # parses it, generates submission files, and then performs the uploads.                     #
+# See https://github.com/SeqWare/public-workflows/blob/develop/vcf-uploader/README.md       #
 #############################################################################################
 
 #############
@@ -530,33 +531,32 @@ END
     # changing some key names to prevent conflicts
     foreach my $key (keys %{$global_attr}) {
       foreach my $val (keys %{$global_attr->{$key}}) {
-      	if ($unmapped_reads_upload){
-      	  if ($key eq "pipeline_input_info") {
-            $key = "alignment_pipeline_input_info";
-          } elsif ($key eq "workflow_name") {
-            $key = "alignment_workflow_name";
-          } elsif ($key eq "workflow_version") {
-            $key = "alignment_workflow_version";
-          } elsif ($key eq "workflow_source_url") {
-            $key = "alignment_workflow_source_url";
-          } elsif ($key eq "workflow_bundle_url") {
-            $key = "alignment_workflow_bundle_url";
-          } elsif ($key eq "workflow_output_bam_contents") {
-            $key = "alignment_workflow_output_bam_contents";
-          } elsif ($key eq "qc_metrics") {
-            $key = "alignment_qc_metrics";
-          } elsif ($key eq "timing_metrics") {
-            $key = "alignment_timing_metrics";
-          } elsif ($key eq "markduplicates_metrics") {
-            $key = "alignment_markduplicates_metrics";
-          } elsif ($key eq "bwa_version") {
-            $key = "alignment_bwa_version";
-          } elsif ($key eq "biobambam_version") {
-            $key = "alignment_biobambam_version";
-          } elsif ($key eq "PCAP-core_version") {
-            $key = "alignment_PCAP-core_version";
-          }
-      	}
+    	  if ($key eq "pipeline_input_info") {
+          $key = "alignment_pipeline_input_info";
+        } elsif ($key eq "workflow_name") {
+          $key = "alignment_workflow_name";
+        } elsif ($key eq "workflow_version") {
+          $key = "alignment_workflow_version";
+        } elsif ($key eq "workflow_source_url") {
+          $key = "alignment_workflow_source_url";
+        } elsif ($key eq "workflow_bundle_url") {
+          $key = "alignment_workflow_bundle_url";
+        } elsif ($key eq "workflow_output_bam_contents") {
+          $key = "alignment_workflow_output_bam_contents";
+        } elsif ($key eq "qc_metrics") {
+          $key = "alignment_qc_metrics";
+        } elsif ($key eq "timing_metrics") {
+          $key = "alignment_timing_metrics";
+        } elsif ($key eq "markduplicates_metrics") {
+          $key = "alignment_markduplicates_metrics";
+        } elsif ($key eq "bwa_version") {
+          $key = "alignment_bwa_version";
+        } elsif ($key eq "biobambam_version") {
+          $key = "alignment_biobambam_version";
+        } elsif ($key eq "PCAP-core_version") {
+          $key = "alignment_PCAP-core_version";
+        }
+
         $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
           <TAG>$key</TAG>
           <VALUE>$val</VALUE>
@@ -914,37 +914,6 @@ sub getQcResult {
     $qc_metrics->{$_} = shift @data for (@header);
 
     push @{ $ret->{qc_metrics} }, {"read_group_id" => $qc_metrics->{readgroup}, "metrics" => $qc_metrics};
-  }
-
-  return to_json $ret;
-}
-
-sub getMarkduplicatesMetrics {
-  my $dup_metrics = `cat $bam.metrics`;
-  my @rows = split /\n/, $dup_metrics;
-
-  my @header = ();
-  my @data = ();
-  my $data_row = 0;
-  foreach (@rows) {
-    last if (/^## HISTOGRAM/); # ignore everything with this and after
-    next if (/^#/ || /^\s*$/);
-
-    $data_row++;
-    do {@header = split /\t/; next} if ($data_row == 1); # header line
-
-    push @data, $_;
-  }
-
-  my $ret = {"markduplicates_metrics" => [], "note" => "The metrics are produced by bammarkduplicates tool of the Biobambam package"};
-  foreach (@data) {
-    my $metrics = {};
-    my @fields = split /\t/;
-
-    $metrics->{lc($_)} = shift @fields for (@header);
-    delete $metrics->{'estimated_library_size'}; # this is irrelevant
-
-    push @{ $ret->{"markduplicates_metrics"} }, {"library" => $metrics->{'library'}, "metrics" => $metrics};
   }
 
   return to_json $ret;
