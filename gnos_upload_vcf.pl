@@ -16,21 +16,6 @@ use Time::Piece;
 # parses it, generates submission files, and then performs the uploads.                     #
 #############################################################################################
 
-#############################################################################################
-# TODO                                                                                      #
-#############################################################################################
-# * generally, this script needs to be re-written so it fully parses the input XML into a   #
-#   data model and then creates the output XML.  There is far too much hacking on XML text. #
-# * probably a good idea to unify this code with the BAM uploader to reduce code            #
-#   duplication                                                                             #
-# * need to add params for various hard-coded items below so the same script can be used    #
-#   for multiple projects                                                                   #
-# * probably need to add param for a tarball of extra files from the workflow (not vcf)     #
-# * the description needs details about the files produced by the workflow, naming          #
-# * need a key-value attribute that documents each VCF/tarball file, what specimens they    #
-#   contain, the variant types they contain, etc.                                           #
-#############################################################################################
-
 #############
 # VARIABLES #
 #############
@@ -42,6 +27,7 @@ my $md5_file = "";
 my $vcfs_idx;
 my $md5_idx_file = "";
 my $tarballs;
+my $tarball_types;
 my $md5_tarball_file;
 
 my $parser = new XML::DOM::Parser;
@@ -92,6 +78,7 @@ GetOptions(
      "vcf-idxs=s" => \$vcfs_idx,
      "vcf-idx-md5sum-files=s" => \$md5_idx_file,
      "tarballs=s" => \$tarballs,
+     "tarball-types=s" => \$tarball_types,
      "tarball-md5sum-files=s" => \$md5_tarball_file,
      "outdir=s" => \$output_dir,
      "key=s" => \$key,
@@ -127,10 +114,15 @@ my $md5_idx_file;
 
 my @vcf_arr = split /,/, $vcfs;
 my @md5_file_arr = split /,/, $md5_file;
+my @vcf_types_arr = split /,/, $vcf_types;
 my @vcfs_idx_arr = split /,/, $vcfs_idx;
 my @md5_idx_file_arr = split /,/, $md5_idx_file;
 my @vcf_checksums;
 my @idx_checksums;
+my @tarball_checksums;
+my @tarball_arr = split /,/, $tarballs;
+my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
+my @tarball_types_arr = split /,/, $tarball_types;
 
 for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   my $vcf_check = `cat $md5_file_arr[$i]`;
@@ -141,10 +133,21 @@ for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   push @idx_checksums, $idx_check;
   if ($force_copy) {
     # rsync to destination
-    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/$vcf_check.vcf.md5 && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.idx && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/$idx_check.vcf.idx.md5");
+    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
   } else {
     # symlink for bam and md5sum file
-    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf && ln -s `pwd`/$md5_file_arr[$i] $output_dir/$vcf_check.vcf.md5 && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.idx && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/$idx_check.vcf.idx.md5");
+    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && ln -s `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
+  }
+}
+
+for(my $i=0; $i<scalar(@tarball_arr); $i++) {
+  my $tarball_check = `cat $md5_tarball_file_arr[$i]`;
+  chomp $tarball_check;
+  push @tarball_checksums, $tarball_check;
+  if ($force_copy) {
+    run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
+  } else {
+    run("ln -s `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && ln -s `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
   }
 }
 
@@ -217,7 +220,6 @@ sub modify_manifest_file {
   system("mv $man.new $man");
 }
 
-# LEFT OFF HERE:
 sub generate_submission {
 
   my ($m) = @_;
@@ -264,7 +266,6 @@ sub generate_submission {
   foreach my $file (keys %{$m}) {
     # populate refcenter from original BAM submission
     # @RG CN:(.*)
-    # FIXME: GNOS currently only allows: ^UCSC$|^NHGRI$|^CGHUB$|^The Cancer Genome Atlas Research Network$|^OICR$
     $refcenter = $m->{$file}{'target'}[0]{'refcenter'};
     $center_name = $m->{$file}{'center_name'};
     $sample_uuid = $m->{$file}{'target'}[0]{'refname'};
@@ -453,6 +454,7 @@ END
             <PIPELINE>
 END
 
+# TODO: these need to come from a template instead
 
     $analysis_xml .= <<END;
                   <PIPE_SECTION section_name="ContaminationAnalysis">
@@ -507,27 +509,15 @@ END
         <FILES>
 END
 
-# LEFT OFF HERE, need to combine with types for the correct name
-
-my @vcf_arr = split /,/, $vcfs;
-my @md5_file_arr = split /,/, $md5_file;
-my @vcfs_idx_arr = split /,/, $vcfs_idx;
-my @md5_idx_file_arr = split /,/, $md5_idx_file;
-my @vcf_checksums;
-my @idx_checksums;
-
-"vcfs=s" => \$vcfs,
-"vcf-md5sum-files=s" => \$md5_file,
-"vcf-idxs=s" => \$vcfs_idx,
-"vcf-idx-md5sum-files=s" => \$md5_idx_file,
-"tarballs=s" => \$tarballs,
-"tarball-md5sum-files=s" => \$md5_tarball_file,
-
+  # VCF files
   for (my $i=0; $i<scalar(@vcf_arr); $i++) {
+    $analysis_xml .= "          <FILE filename=\"$vcf_types_arr[$i]_$vcf_checksums[$i].vcf\" filetype=\"vcf\" checksum_method=\"MD5\" checksum=\"$vcf_checksums[$i]\" />\n";
+    $analysis_xml .= "          <FILE filename=\"$vcf_types_arr[$i]_$idx_checksums[$i].idx\" filetype=\"idx\" checksum_method=\"MD5\" checksum=\"$idx_checksums[$i]\" />\n";
+  }
 
-  $analysis_xml .= "          <FILE filename=\"$vcf_checksums[$i].bam\" filetype=\"vcf\" checksum_method=\"MD5\" checksum=\"$vcf_checksums[$i]\" />\n";
-  $analysis_xml .= "          <FILE filename=\"$idx_checksums.idx\" filetype=\"idx\" checksum_method=\"MD5\" checksum=\"$idx_checksums\" />\n";
-
+  # Tarball files
+  for (my $i=0; $i<scalar(@tarball_arr); $i++) {
+    $analysis_xml .= "          <FILE filename=\"$tarball_types_arr[$i]_$tarball_checksums[$i].tar.gz\" filetype=\"tar\" checksum_method=\"MD5\" checksum=\"$tarball_checksums[$i]\" />\n";
   }
 
   $analysis_xml .= <<END;
@@ -536,14 +526,36 @@ my @idx_checksums;
       <ANALYSIS_ATTRIBUTES>
 END
 
-# LEFT OFF HERE: need to filter out the key-values I don't want and change the names 
-
     # this is a merge of the key-values from input XML
+    # changing some key names to prevent conflicts
     foreach my $key (keys %{$global_attr}) {
       foreach my $val (keys %{$global_attr->{$key}}) {
       	if ($unmapped_reads_upload){
-      	  next if ($key eq "pipeline_input_info");
-      	  next if ($key eq "pipeline_input_info");
+      	  if ($key eq "pipeline_input_info") {
+            $key = "alignment_pipeline_input_info";
+          } elsif ($key eq "workflow_name") {
+            $key = "alignment_workflow_name";
+          } elsif ($key eq "workflow_version") {
+            $key = "alignment_workflow_version";
+          } elsif ($key eq "workflow_source_url") {
+            $key = "alignment_workflow_source_url";
+          } elsif ($key eq "workflow_bundle_url") {
+            $key = "alignment_workflow_bundle_url";
+          } elsif ($key eq "workflow_output_bam_contents") {
+            $key = "alignment_workflow_output_bam_contents";
+          } elsif ($key eq "qc_metrics") {
+            $key = "alignment_qc_metrics";
+          } elsif ($key eq "timing_metrics") {
+            $key = "alignment_timing_metrics";
+          } elsif ($key eq "markduplicates_metrics") {
+            $key = "alignment_markduplicates_metrics";
+          } elsif ($key eq "bwa_version") {
+            $key = "alignment_bwa_version";
+          } elsif ($key eq "biobambam_version") {
+            $key = "alignment_biobambam_version";
+          } elsif ($key eq "PCAP-core_version") {
+            $key = "alignment_PCAP-core_version";
+          }
       	}
         $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
           <TAG>$key</TAG>
@@ -554,53 +566,21 @@ END
     }
 
   # some metadata about this workflow
-  # TODO: add runtime info in here too, possibly other info
-  # see https://jira.oicr.on.ca/browse/PANCANCER-43
-  # see https://jira.oicr.on.ca/browse/PANCANCER-6
   $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_name</TAG>
+          <TAG>variant_workflow_name</TAG>
           <VALUE>$workflow_name</VALUE>
         </ANALYSIS_ATTRIBUTE>
         <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_version</TAG>
+          <TAG>variant_workflow_version</TAG>
           <VALUE>$workflow_version</VALUE>
         </ANALYSIS_ATTRIBUTE>
         <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_source_url</TAG>
+          <TAG>variant_workflow_source_url</TAG>
           <VALUE>$workflow_src_url</VALUE>
         </ANALYSIS_ATTRIBUTE>
         <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_bundle_url</TAG>
+          <TAG>variant_workflow_bundle_url</TAG>
           <VALUE>$workflow_url</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-";
-
-if ($unmapped_reads_upload) {
-  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_output_bam_contents</TAG>
-          <VALUE>unaligned</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-";
-} else {
-  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>workflow_output_bam_contents</TAG>
-          <VALUE>aligned+unaligned</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-";
-}
-
-unless ($unmapped_reads_upload) {
-  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>bwa_version</TAG>
-          <VALUE>$bwa_version</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-        <ANALYSIS_ATTRIBUTE>
-          <TAG>biobambam_version</TAG>
-          <VALUE>$biobambam_version</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-        <ANALYSIS_ATTRIBUTE>
-          <TAG>PCAP-core_version</TAG>
-          <VALUE>$pcap_version</VALUE>
         </ANALYSIS_ATTRIBUTE>
 ";
 
@@ -618,13 +598,6 @@ unless ($unmapped_reads_upload) {
         </ANALYSIS_ATTRIBUTE>
 ";
 
-  # Markduplicates metrics
-  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
-          <TAG>markduplicates_metrics</TAG>
-          <VALUE>" . &getMarkduplicatesMetrics() . "</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-";
-}
   $analysis_xml .= <<END;
       </ANALYSIS_ATTRIBUTES>
     </ANALYSIS>
