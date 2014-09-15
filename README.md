@@ -6,6 +6,14 @@ This tool is designed to upload one or more VCF/tarball files produced during va
 
 This is a work in progress. See https://wiki.oicr.on.ca/display/PANCANCER/VCF+Upload+SOP for more information.
 
+## Dependencies
+
+You can use PerlBrew (or your native package manager) to install dependencies.  For example:
+
+    cpanm XML::DOM XML::XPath XML::XPath::XMLParser JSON Data::UUID XML::LibXML Time::Piece
+
+Once these are installed you can execute the script with the command below.
+
 ## Running
 
 The parameters:
