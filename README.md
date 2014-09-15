@@ -47,4 +47,4 @@ An example:
 * need to add params for various hard-coded items below so the same script can be used for multiple variant workflows
 * the description needs details about the files produced by the workflow, naming conventions, etc
 * need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
-* 
+
