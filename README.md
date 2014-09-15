@@ -40,3 +40,11 @@ The parameters:
 An example:
 
     perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisDetail/0480b9bb-611d-4759-a305-98f9298474fe --vcfs foo.vcf --vcf-types somatic --vcf-md5sum-files foo.vcf.md5 --vcf-idxs foo.vcf.idx --vcf-idx-md5sum-files foo.vcf.idx.md5 --tarballs bar.tar.gz --tarball-md5sum-files bar.tar.gz.md5 --tarball-types somatic --outdir test --key test.pem --upload-url https://gtrepo-osdc-icgc.annailabs.com --study-refname-override CGTEST --test
+
+## To Do
+
+* probably a good idea to unify this code with the BAM uploader to reduce code duplication
+* need to add params for various hard-coded items below so the same script can be used for multiple variant workflows
+* the description needs details about the files produced by the workflow, naming conventions, etc
+* need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
+* 
