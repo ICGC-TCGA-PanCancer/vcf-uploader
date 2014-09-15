@@ -21,7 +21,6 @@ use Time::Piece;
 # VARIABLES #
 #############
 
-my $metadata_urls;
 my $vcfs;
 my $vcf_types;
 my $md5_file = "";
@@ -51,7 +50,8 @@ my $study_ref_name = "icgc_pancancer";
 my $analysis_center = "OICR";
 my $metadata_url;
 
-if (scalar(@ARGV) < 12 || scalar(@ARGV) > 20) {
+# TODO: check the counts here
+if (scalar(@ARGV) < 12 || scalar(@ARGV) > 34) {
   die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-url <URL_for_specimen-level_aligned_BAM_input>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
@@ -108,11 +108,6 @@ my $final_touch_file = "$output_dir/upload_complete.txt";
 # md5sum
 print "COPYING FILES TO OUTPUT DIR\n";
 
-my $vcfs;
-my $md5_file;
-my $vcfs_idx;
-my $md5_idx_file;
-
 my @vcf_arr = split /,/, $vcfs;
 my @md5_file_arr = split /,/, $md5_file;
 my @vcf_types_arr = split /,/, $vcf_types;
@@ -124,6 +119,8 @@ my @tarball_checksums;
 my @tarball_arr = split /,/, $tarballs;
 my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 my @tarball_types_arr = split /,/, $tarball_types;
+
+print "VCFS: ".$vcfs."\n";
 
 for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   my $vcf_check = `cat $md5_file_arr[$i]`;
@@ -153,7 +150,7 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
 }
 
 print "DOWNLOADING METADATA FILES\n";
-my $metad = download_metadata($metadata_urls);
+my $metad = download_metadata($metadata_url);
 
 print "GENERATING SUBMISSION\n";
 my $sub_path = generate_submission($metad);
