@@ -46,12 +46,14 @@ my $workflow_url = "https://s3.amazonaws.com/oicr.workflow.bundles/released-bund
 my $changelog_url = "https://github.com/broadinstitute/workflow-broad-cancer/blob/$workflow_version/workflow-broad-cancer/CHANGELOG.md";
 # todo, add tools for this upload type
 my $force_copy = 0;
-my $study_ref_name = "icgc_pancancer";
+my $study_ref_name = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
 my $metadata_url;
+my $suppress_runxml = 0;
+my $suppress_expxml = 0;
 
 # TODO: check the counts here
-if (scalar(@ARGV) < 12 || scalar(@ARGV) > 34) {
+if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
   die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-url <URL_for_specimen-level_aligned_BAM_input>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
@@ -65,6 +67,8 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 34) {
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
+       [--suppress-runxml]
+       [--suppress-expxml]
        [--force-copy]
        [--study-refname-override <study_refname_override>]
        [--analysis-center-override <analysis_center_override>]
@@ -85,12 +89,13 @@ GetOptions(
      "key=s" => \$key,
      "upload-url=s" => \$upload_url,
      "test" => \$test,
+     "suppress-runxml" => \$suppress_runxml,
+     "suppress-expxml" => \$suppress_expxml,
      "force-copy" => \$force_copy,
      "skip-validate" => \$skip_validate,
      "study-refname-override=s" => \$study_ref_name,
      "analysis-center-override=s" => \$analysis_center,
      );
-
 
 
 ##############
@@ -105,9 +110,7 @@ run("mkdir -p $output_dir/$uuid");
 $output_dir = $output_dir."/$uuid/";
 my $final_touch_file = "$output_dir/upload_complete.txt";
 
-# md5sum
-print "COPYING FILES TO OUTPUT DIR\n";
-
+# parse values
 my @vcf_arr = split /,/, $vcfs;
 my @md5_file_arr = split /,/, $md5_file;
 my @vcf_types_arr = split /,/, $vcf_types;
@@ -120,8 +123,27 @@ my @tarball_arr = split /,/, $tarballs;
 my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 my @tarball_types_arr = split /,/, $tarball_types;
 
-print "VCFS: ".$vcfs."\n";
+print "VALIDATING PARAMS\n";
+if (scalar(@vcf_arr) != scalar(@md5_file_arr)) {
+  die "VCF and VCF md5sum file count don't match!\n";
+}
+if (scalar(@vcf_arr) != scalar(@vcf_types_arr)) {
+  die "VCF and VCF types count don't match!\n";
+}
+if (scalar(@vcf_arr) != scalar(@vcfs_idx_arr)) {
+  die "VCF and VCF index count don't match!\n";
+}
+if (scalar(@vcf_arr) != scalar(@md5_idx_file_arr)) {
+  die "VCF index and VCF index md5sum count don't match!\n";
+}
+if (scalar(@tarball_arr) != scalar(@md5_tarball_file_arr)) {
+  die "Tarball and Tarball md5sum count don't match!\n";
+}
+if (scalar(@tarball_arr) != scalar(@tarball_types_arr)) {
+  die "Tarball and Tarball types count don't match!\n";
+}
 
+print "COPYING FILES TO OUTPUT DIR\n";
 for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   my $vcf_check = `cat $md5_file_arr[$i]`;
   my $idx_check = `cat $md5_idx_file_arr[$i]`;
@@ -130,11 +152,16 @@ for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   push @vcf_checksums, $vcf_check;
   push @idx_checksums, $idx_check;
   if ($force_copy) {
+    # TODO: will need to ensure I'm using the correct filename extension here
     # rsync to destination
-    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
+    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/ && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/");
+    # INFO: I was thinking about renaming files but I think it's safer to not do this
+    #run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check= && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
   } else {
     # symlink for bam and md5sum file
-    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && ln -s `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
+    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/ && ln -s `pwd`/$md5_file_arr[$i] $output_dir/ && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/ && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/");
+    # INFO
+    #run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && ln -s `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
   }
 }
 
@@ -143,9 +170,10 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
   chomp $tarball_check;
   push @tarball_checksums, $tarball_check;
   if ($force_copy) {
-    run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
+    run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/");
+    #run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
   } else {
-    run("ln -s `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && ln -s `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
+    run("ln -s `pwd`/$tarball_arr[$i] $output_dir/ && ln -s `pwd`/$md5_tarball_file_arr[$i] $output_dir/");
   }
 }
 
@@ -509,13 +537,13 @@ END
 
   # VCF files
   for (my $i=0; $i<scalar(@vcf_arr); $i++) {
-    $analysis_xml .= "          <FILE filename=\"$vcf_types_arr[$i]_$vcf_checksums[$i].vcf\" filetype=\"vcf\" checksum_method=\"MD5\" checksum=\"$vcf_checksums[$i]\" />\n";
-    $analysis_xml .= "          <FILE filename=\"$vcf_types_arr[$i]_$idx_checksums[$i].idx\" filetype=\"idx\" checksum_method=\"MD5\" checksum=\"$idx_checksums[$i]\" />\n";
+    $analysis_xml .= "          <FILE filename=\"$vcf_arr[$i]\" filetype=\"vcf\" checksum_method=\"MD5\" checksum=\"$vcf_checksums[$i]\" />\n";
+    $analysis_xml .= "          <FILE filename=\"$vcfs_idx_arr[$i]\" filetype=\"idx\" checksum_method=\"MD5\" checksum=\"$idx_checksums[$i]\" />\n";
   }
 
   # Tarball files
   for (my $i=0; $i<scalar(@tarball_arr); $i++) {
-    $analysis_xml .= "          <FILE filename=\"$tarball_types_arr[$i]_$tarball_checksums[$i].tar.gz\" filetype=\"tar\" checksum_method=\"MD5\" checksum=\"$tarball_checksums[$i]\" />\n";
+    $analysis_xml .= "          <FILE filename=\"$tarball_arr[$i]\" filetype=\"tar\" checksum_method=\"MD5\" checksum=\"$tarball_checksums[$i]\" />\n";
   }
 
   $analysis_xml .= <<END;
@@ -629,9 +657,11 @@ END
   </EXPERIMENT_SET>
 END
 
-  open OUT, ">$output_dir/experiment.xml" or die;
-  print OUT "$exp_xml\n";
-  close OUT;
+  if ($suppress_expxml) {
+    open OUT, ">$output_dir/experiment.xml" or die;
+    print OUT "$exp_xml\n";
+    close OUT;
+  }
 
   # make a uniq list of blocks
   my $uniq_run_xml = {};
@@ -656,9 +686,11 @@ END
   </RUN_SET>
 END
 
-  open OUT, ">$output_dir/run.xml" or die;
-  print OUT $run_xml;
-  close OUT;
+  if (!$suppress_runxml) {
+    open OUT, ">$output_dir/run.xml" or die;
+    print OUT $run_xml;
+    close OUT;
+  }
 
   return($output_dir);
 
