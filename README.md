@@ -44,7 +44,7 @@ The $META data string must be made up of the following fields (with "." as a fie
 | Field            | Description                                   | Example                              |
 |------------------|-----------------------------------------------|--------------------------------------|
 | Sample ID        | SM field from BAM, aka ICGC Specimen UUID     | 7d7205e8-d864-11e3-be46-bd5eb93a18bb |
-| Pipeline-Version | Pipeline name plus the version, "-" seperated | BroadCancerAnalysis-1.0.0            |
+| Pipeline-Version | Pipeline name plus the version, "_" seperated with "-" for the version string | BroadCancerAnalysis_1-0-0            |
 | Date             | Date of creation                              | yyyymmdd                             |
 | Type             | "somatic" or "germline"                       | "somatic" or "germline"              |
 
@@ -81,6 +81,7 @@ An example:
 
     perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e --vcfs foo.vcf --vcf-types somatic --vcf-md5sum-files foo.vcf.md5 --vcf-idxs foo.vcf.idx --vcf-idx-md5sum-files foo.vcf.idx.md5 --tarballs bar.tar.gz --tarball-md5sum-files bar.tar.gz.md5 --tarball-types somatic --outdir test --key test.pem --upload-url https://gtrepo-osdc-icgc.annailabs.com --study-refname-override CGTEST --test
 
+Sample ID: 914ee592-e855-43d3-8767-a96eb6d1f067
 
 
 ## To Do

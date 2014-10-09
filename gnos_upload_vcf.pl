@@ -36,6 +36,7 @@ my $key = "gnostest.pem";
 my $upload_url = "";
 my $test = 0;
 my $skip_validate = 0;
+my $skip_upload = 0;
 # hardcoded
 my $seqware_version = "1.0.15";
 my $workflow_version = "1.0.0";
@@ -49,8 +50,8 @@ my $force_copy = 0;
 my $study_ref_name = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
 my $metadata_url;
-my $suppress_runxml = 0;
-my $suppress_expxml = 0;
+my $make_runxml = 0;
+my $make_expxml = 0;
 
 # TODO: check the counts here
 if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
@@ -67,12 +68,13 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
-       [--suppress-runxml]
-       [--suppress-expxml]
+       [--make-runxml]
+       [--make-expxml]
        [--force-copy]
        [--study-refname-override <study_refname_override>]
        [--analysis-center-override <analysis_center_override>]
        [--skip-validate]
+       [--skip-upload]
        [--test]\n"; }
 
 GetOptions(
@@ -89,10 +91,11 @@ GetOptions(
      "key=s" => \$key,
      "upload-url=s" => \$upload_url,
      "test" => \$test,
-     "suppress-runxml" => \$suppress_runxml,
-     "suppress-expxml" => \$suppress_expxml,
+     "make-runxml" => \$make_runxml,
+     "make-expxml" => \$make_expxml,
      "force-copy" => \$force_copy,
      "skip-validate" => \$skip_validate,
+     "skip-upload" => \$skip_upload,
      "study-refname-override=s" => \$study_ref_name,
      "analysis-center-override=s" => \$analysis_center,
      );
@@ -657,7 +660,7 @@ END
   </EXPERIMENT_SET>
 END
 
-  if ($suppress_expxml) {
+  if ($make_expxml) {
     open OUT, ">$output_dir/experiment.xml" or die;
     print OUT "$exp_xml\n";
     close OUT;
@@ -686,7 +689,7 @@ END
   </RUN_SET>
 END
 
-  if (!$suppress_runxml) {
+  if ($make_runxml) {
     open OUT, ">$output_dir/run.xml" or die;
     print OUT $run_xml;
     close OUT;
