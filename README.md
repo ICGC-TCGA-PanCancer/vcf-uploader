@@ -88,10 +88,10 @@ An example:
     --tarballs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz \
     --tarball-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz.md5 \
     --tarball-types germline --outdir test --key test.pem \
-    --upload-url https://gtrepo-osdc-icgc.annailabs.com \
-    --study-refname-override CGTEST --test
+    --upload-url https://gtrepo-ebi.annailabs.com \
+    --study-refname-override icgc_pancancer_vcf --test
 
-Sample ID: 914ee592-e855-43d3-8767-a96eb6d1f067
+
 
 
 ## To Do
