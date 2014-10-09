@@ -89,7 +89,7 @@ An example:
     --tarball-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz.md5 \
     --tarball-types germline --outdir test --key test.pem \
     --upload-url https://gtrepo-ebi.annailabs.com \
-    --study-refname-override icgc_pancancer_vcf --test
+    --study-refname-override icgc_pancancer_vcf_test --test
 
 
 
@@ -104,6 +104,7 @@ An example:
 * support .gz vcf files, perhaps always make these if input is .vcf?
 * need to add support for runtime and qc information files in a generic way
 * support for ".tbi" extensions rather than ".idx"
+* add code to test for gtupload/gtsubmit
 
 ## Bugs
 
