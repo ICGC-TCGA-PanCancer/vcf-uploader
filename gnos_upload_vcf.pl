@@ -210,7 +210,7 @@ sub upload_submission {
   my ($sub_path) = @_;
   my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
   print "UPLOADING METADATA: $cmd\n";
-  if (!$test) {
+  if (!$test && !$skip_upload) {
     if (run($cmd)) { return(1); }
   }
 

@@ -79,7 +79,17 @@ The parameters:
 
 An example:
 
-    perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e --vcfs foo.vcf --vcf-types somatic --vcf-md5sum-files foo.vcf.md5 --vcf-idxs foo.vcf.idx --vcf-idx-md5sum-files foo.vcf.idx.md5 --tarballs bar.tar.gz --tarball-md5sum-files bar.tar.gz.md5 --tarball-types somatic --outdir test --key test.pem --upload-url https://gtrepo-osdc-icgc.annailabs.com --study-refname-override CGTEST --test
+    perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e \
+    --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz \
+    --vcf-types germline \
+    --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.md5 \
+    --vcf-idxs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.idx \
+    --vcf-idx-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.idx.md5 \
+    --tarballs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz \
+    --tarball-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz.md5 \
+    --tarball-types germline --outdir test --key test.pem \
+    --upload-url https://gtrepo-osdc-icgc.annailabs.com \
+    --study-refname-override CGTEST --test
 
 Sample ID: 914ee592-e855-43d3-8767-a96eb6d1f067
 
