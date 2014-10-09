@@ -2,7 +2,7 @@
 
 ## Overview
 
-This tool is designed to upload one or more VCF/tarball files produced during variant calling.
+This tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  It is designed to be called as a step in a workflow or manually if needed.
 
 This is a work in progress. See https://wiki.oicr.on.ca/display/PANCANCER/VCF+Upload+SOP for more information.
 
@@ -12,21 +12,45 @@ You can use PerlBrew (or your native package manager) to install dependencies.  
 
     cpanm XML::DOM XML::XPath XML::XPath::XMLParser JSON Data::UUID XML::LibXML Time::Piece
 
-Once these are installed you can execute the script with the command below.
+Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
 ## Inputs
+
+The variant calling working group has established naming conventions for the files submitted from variant calling workflows.  See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+file+formats+and+naming+conventions and the SOP https://wiki.oicr.on.ca/display/PANCANCER/VCF+Upload+SOP.
 
 This tool is designed to work with the following file types:
 
 * vcf.gz: VCF file http://samtools.github.io/hts-specs/VCFv4.2.pdf compressed with 'bgzip <filename.vcf>', see http://vcftools.sourceforge.net/perl_module.html
-* vcf.gz.idx.gz: compressed tabix index generated with 'tabix -p vcf foo.vcf.gz; mv foo.vcf.gz.tbi foo.vcf.gz.idx; bgzip foo.vcf.gz.idx'
+* vcf.gz.idx: tabix index generated with 'tabix -p vcf foo.vcf.gz; mv foo.vcf.gz.tbi foo.vcf.gz.idx'
 * vcf.gz.md5: md5sum file made with 'md5sum foo.vcf.gz | awk '{print$1}' > foo.vcf.gz.md5'
-* vcf.gz.idx.gz.md5: md5sum file make with 'md5sum foo.vcf.gz.idx.gz | awk '{print$1}' > foo.vcf.gz.idx.gz.md5'
+* vcf.gz.idx.md5: md5sum file make with 'md5sum foo.vcf.gz.idx | awk '{print$1}' > foo.vcf.gz.idx.md5'
 
 And we also have a generic container format for files other than VCF/IDX file types:
 
-* tar.gz: a standard tar/gz file format made with something similar to 'tar zcf bar.tar.gz <files>'
-* tar.gz.md5: md5sum file made with something like 'md5sum bar.tar.gz | awk '{print$1}' > bar.tar.gz.md5'
+* tar.gz: a standard tar/gz file format made with something similar to 'tar zcf bar.tar.gz <files>'. The tar.gz file must contain a README file that describes its contents
+* tar.gz.md5: md5sum file made with something like 'md5sum bar.tar.gz | awk '{print$1}' > bar.tar.gz.md5'.
+
+The files should be named using the following conventions:
+
+| Datatype              | Required Files                                | Optional Files       |
+|-----------------------|-----------------------------------------------|----------------------|
+| SNV, MNV              | $META.snv_mnv.vcf.gz $META.snv_mnv.vcf.gz.tbi | $META.snv_mnv.tar.gz |
+| Indel                 | $META.indel.vcf.gz $META.indel.vcf.gz.tbi     | $META.indel.tar.gz   |
+| Structural Variation  | $META.sv.vcf.gz $META.sv.vcf.gz.tbi           | $META.sv.tar.gz      |
+| Copy Number Variation | $META.cnv.vcf.gz $META.cnv.vcf.gz.tbi         | $META.cnv.vcf.gz     |
+
+The $META data string must be made up of the following fields (with "." as a field separator):
+
+| Field            | Description                                   | Example                              |
+|------------------|-----------------------------------------------|--------------------------------------|
+| Sample ID        | SM field from BAM, aka ICGC Specimen UUID     | 7d7205e8-d864-11e3-be46-bd5eb93a18bb |
+| Pipeline-Version | Pipeline name plus the version, "-" seperated | BroadCancerAnalysis-1.0.0            |
+| Date             | Date of creation                              | yyyymmdd                             |
+| Type             | "somatic" or "germline"                       | "somatic" or "germline"              |
+
+There may be multiple somatic call files each with different Samples IDs if, for example, there is a cell-line, metastasis, second tumor sample.  There should be 0 or 1 germline file.
+
+Note: the variant calling working group has specified ".tbi" rather than ".idx" as the tabix index extension. I have asked Annai to add support for ".tbi" and will update the code to standardize on this once the GNOS changes have been made.  Also, a README needs to be included in each tar.gz file to document the contents. In the pilot this was a separate README file but GNOS does not support uploading this directly and, therefore, it needs to included in the tar.gz file.
 
 ## Running
 
@@ -68,6 +92,7 @@ An example:
 * removed hard coded files and replace with templates
 * support .gz vcf files, perhaps always make these if input is .vcf?
 * need to add support for runtime and qc information files in a generic way
+* support for ".tbi" extensions rather than ".idx"
 
 ## Bugs
 
