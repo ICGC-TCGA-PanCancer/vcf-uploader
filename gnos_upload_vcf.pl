@@ -202,6 +202,7 @@ sub validate_submission {
   my $cmd = "cgsubmit --validate-only -s $upload_url -o validation.log -u $sub_path -vv";
   print "VALIDATING: $cmd\n";
   if (!$skip_validate) {
+    if (system("which cgsubmit")) { die "ABORT: No cgsubmit installed, aborting!"; }
     return(run($cmd));
   }
 }
@@ -211,6 +212,7 @@ sub upload_submission {
   my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
   print "UPLOADING METADATA: $cmd\n";
   if (!$test && !$skip_upload) {
+    if (system("which cgsubmit")) { die "ABORT: No cgsubmit installed, aborting!"; }
     if (run($cmd)) { return(1); }
   }
 
@@ -222,6 +224,7 @@ sub upload_submission {
   $cmd = "cd $sub_path; gtupload -v -c $key -u ./manifest.xml; cd -";
   print "UPLOADING DATA: $cmd\n";
   if (!$test) {
+    if (system("which gtupload")) { die "ABORT: No gtupload installed, aborting!"; }
     if (run($cmd)) { return(1); }
   }
 

@@ -105,6 +105,7 @@ An example:
 * need to add support for runtime and qc information files in a generic way
 * support for ".tbi" extensions rather than ".idx"
 * add code to test for gtupload/gtsubmit
+* MAJOR: need to be able to support mulitple --metadata-url for, example, the somatic calls will combine the normal and tumor aligned BAMs
 
 ## Bugs
 
