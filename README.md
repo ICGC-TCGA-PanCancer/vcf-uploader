@@ -81,7 +81,8 @@ The parameters:
 
 An example for a germline VCF and a germline :
 
-    perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e \
+    perl  gnos_upload_vcf.pl --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e,https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087 \
+    --metadata-url-types normal,tumor
     --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz \
     --vcf-types germline \
     --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.md5 \
@@ -95,6 +96,20 @@ An example for a germline VCF and a germline :
 
 Something to note from the above, you'll want to
 
+## Test Data
+
+The sample command above is using the Donor ICGC_0437 as an example:
+
+    # the tumor
+    SPECIMEN/SAMPLE: 8051719
+        ANALYZED SAMPLE/ALIQUOT: 8051719
+            LIBRARY: WGS:QCMG:Library_20121203_T
+                TUMOR: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087
+
+    SPECIMEN/SAMPLE: 8051442
+        ANALYZED SAMPLE/ALIQUOT: 8051442
+            LIBRARY: WGS:QCMG:Library_20121203_U
+                NORMAL: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e
 
 ## To Do
 
@@ -110,6 +125,7 @@ Something to note from the above, you'll want to
 * MAJOR: need to be able to support mulitple --metadata-url for, example, the somatic calls will combine the normal and tumor aligned BAMs
 * MAJOR: currently you'll need to run the tool twice, once for germline upload and the second for somatic.  You can't mix the two otherwise you'll have an analysis that has a bunch of GNOS XML attributes from both.  The URL can be a comma seperated list, so should make sure I create a single analysis.xml for all submission files that correctly labels the various bits of the XML so that it's easy to tell what came from where.  The key is a single analysis.xml submission for a given workflow run so that way it's easy to tell the difference between different runs of the workflow.  You could still call the tool multiple times to give somatic/germline different analysis.xml and entries in the GNOS.  But it's better to have everything in one analysis ID on the server.
 * we need a way to pass in a JSON that describes the steps of the workflow
+* what about the "--metadata-url-types normal,tumor" parameter, what's going on with this?  What controlled vocab to use here?
 
 ## Bugs
 
