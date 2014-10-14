@@ -18,7 +18,7 @@ You also need the gtdownload/gtuplod/cgsubmit tools installed.  These are availa
 
 ## Inputs
 
-The variant calling working group has established naming conventions for the files submitted from variant calling workflows.  See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+file+formats+and+naming+conventions and the SOP https://wiki.oicr.on.ca/display/PANCANCER/VCF+Upload+SOP.
+The variant calling working group has established naming conventions for the files submitted from variant calling workflows.  See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0.
 
 This tool is designed to work with the following file types:
 
@@ -32,7 +32,7 @@ And we also have a generic container format for files other than VCF/IDX file ty
 * tar.gz: a standard tar/gz file format made with something similar to 'tar zcf bar.tar.gz <files>'. The tar.gz file must contain a README file that describes its contents
 * tar.gz.md5: md5sum file made with something like 'md5sum bar.tar.gz | awk '{print$1}' > bar.tar.gz.md5'.
 
-The files should be named using the following conventions:
+The files should be named using the following conventions (again, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0):
 
 | Datatype              | Required Files                                | Optional Files       |
 |-----------------------|-----------------------------------------------|----------------------|
@@ -50,7 +50,7 @@ The $META data string must be made up of the following fields (with "." as a fie
 | Date             | Date of creation                              | yyyymmdd                             |
 | Type             | "somatic" or "germline"                       | "somatic" or "germline"              |
 
-There may be multiple somatic call files each with different Samples IDs if, for example, there is a cell-line, metastasis, second tumor sample.  There should be 0 or 1 germline file.
+There may be multiple somatic call file sets each with different samples IDs if, for example, there is a cell-line, metastasis, second tumor sample.  There should be one set of germline files.
 
 Note: the variant calling working group has specified ".tbi" rather than ".idx" as the tabix index extension. I have asked Annai to add support for ".tbi" and will update the code to standardize on this once the GNOS changes have been made.  Also, a README needs to be included in each tar.gz file to document the contents. In the pilot this was a separate README file but GNOS does not support uploading this directly and, therefore, it needs to included in the tar.gz file.
 
@@ -94,7 +94,7 @@ An example for a germline VCF and a germline :
     --upload-url https://gtrepo-ebi.annailabs.com \
     --study-refname-override icgc_pancancer_vcf_test --test
 
-Something to note from the above, you'll want to
+Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than single analysis records for each individual set of files.
 
 ## Test Data
 
@@ -113,21 +113,22 @@ The sample command above is using the Donor ICGC_0437 as an example:
                 NORMAL: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e
                 SAMPLE UUID: 914ee592-e855-43d3-8767-a96eb6d1f067
 
+You can find fake examples of VCF, tarball, and associated files in the sample_files directory.
+
 ## To Do
 
-* probably a good idea to unify this code with the BAM uploader to reduce code duplication
 * need to add params for various hard-coded items below so the same script can be used for multiple variant workflows. For example workflow name, version, etc
-* the description needs details about the files produced by the workflow, naming conventions, etc
-* need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
 * removed hard coded files and replace with templates
-* support .gz vcf files, perhaps always make these if input is .vcf?
+* we need a way to pass in a JSON that describes the steps of the workflow or just use a template above
+* the description needs details about the files produced by the workflow, naming conventions, etc
 * need to add support for runtime and qc information files in a generic way
-* support for ".tbi" extensions rather than ".idx"
-* add code to test for gtupload/gtsubmit
+* support for ".tbi" extensions rather than ".idx" (GNOS issue)
+* what about the "--metadata-url-types normal,tumor" parameter, what's going on with this?  What controlled vocab to use here?
+* MAJOR: need a variant calling workflow input JSON summary
+    * input will be 2 or more metadata URLs.  Will need to assign types to each of these and organize the JSON info lifted over from these BAMs' metadata into typed JSON documents e.g. the germline JSON doc
+* MAJOR: need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc.
 * MAJOR: need to be able to support mulitple --metadata-url for, example, the somatic calls will combine the normal and tumor aligned BAMs
 * MAJOR: currently you'll need to run the tool twice, once for germline upload and the second for somatic.  You can't mix the two otherwise you'll have an analysis that has a bunch of GNOS XML attributes from both.  The URL can be a comma seperated list, so should make sure I create a single analysis.xml for all submission files that correctly labels the various bits of the XML so that it's easy to tell what came from where.  The key is a single analysis.xml submission for a given workflow run so that way it's easy to tell the difference between different runs of the workflow.  You could still call the tool multiple times to give somatic/germline different analysis.xml and entries in the GNOS.  But it's better to have everything in one analysis ID on the server.
-* we need a way to pass in a JSON that describes the steps of the workflow
-* what about the "--metadata-url-types normal,tumor" parameter, what's going on with this?  What controlled vocab to use here?
 
 ## Bugs
 

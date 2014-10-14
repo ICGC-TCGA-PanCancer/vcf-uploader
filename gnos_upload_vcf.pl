@@ -15,6 +15,7 @@ use Time::Piece;
 # This tool takes metadata URLs and VCF path(s). It then downloads metadata,                #
 # parses it, generates submission files, and then performs the uploads.                     #
 # See https://github.com/SeqWare/public-workflows/blob/develop/vcf-uploader/README.md       #
+# Also see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0        #
 #############################################################################################
 
 #############
@@ -45,7 +46,7 @@ my $workflow_name = "Workflow_Bundle_Broad_Cancer_Variant_Analysis";
 my $workflow_src_url = "https://github.com/broadinstitute/workflow-broad-cancer/tree/$workflow_version/workflow-broad-cancer";
 my $workflow_url = "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_Broad_Cancer_Variant_Analysis_".$workflow_version."_SeqWare_$seqware_version.zip";
 my $changelog_url = "https://github.com/broadinstitute/workflow-broad-cancer/blob/$workflow_version/workflow-broad-cancer/CHANGELOG.md";
-# todo, add tools for this upload type
+# TODO: add tools for this upload type
 my $force_copy = 0;
 my $study_ref_name = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
@@ -155,7 +156,6 @@ for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   push @vcf_checksums, $vcf_check;
   push @idx_checksums, $idx_check;
   if ($force_copy) {
-    # TODO: will need to ensure I'm using the correct filename extension here
     # rsync to destination
     run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/ && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/");
     # INFO: I was thinking about renaming files but I think it's safer to not do this
@@ -182,6 +182,10 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
 
 print "DOWNLOADING METADATA FILES\n";
 my $metad = download_metadata($metadata_url);
+
+# LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
+#print Dumper ($metad);
+#die;
 
 print "GENERATING SUBMISSION\n";
 my $sub_path = generate_submission($metad);
@@ -351,7 +355,7 @@ sub generate_submission {
   }
   my $str = to_json($pi2);
   $global_attr->{"pipeline_input_info"}{$str} = 1;
-  #print Dumper($global_attr);
+  # print Dumper($global_attr);
 
   my $description = "This is the variant calling for specimen $sample_id from donor $participant_id. The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the $workflow_name workflow, version $workflow_version available at $workflow_url. This workflow can be created from source, see $workflow_src_url. For a complete change log see $changelog_url. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference.";
 
