@@ -105,11 +105,13 @@ The sample command above is using the Donor ICGC_0437 as an example:
         ANALYZED SAMPLE/ALIQUOT: 8051719
             LIBRARY: WGS:QCMG:Library_20121203_T
                 TUMOR: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087
+                SAMPLE UUID: a4beedc3-0e96-4e1c-90b4-3674dfc01786
 
     SPECIMEN/SAMPLE: 8051442
         ANALYZED SAMPLE/ALIQUOT: 8051442
             LIBRARY: WGS:QCMG:Library_20121203_U
                 NORMAL: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e
+                SAMPLE UUID: 914ee592-e855-43d3-8767-a96eb6d1f067
 
 ## To Do
 
