@@ -184,8 +184,8 @@ print "DOWNLOADING METADATA FILES\n";
 my $metad = download_metadata($metadata_url);
 
 # LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
-#print Dumper ($metad);
-#die;
+print Dumper ($metad);
+die;
 
 print "GENERATING SUBMISSION\n";
 my $sub_path = generate_submission($metad);
