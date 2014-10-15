@@ -282,14 +282,15 @@ sub generate_output_json {
 sub process_files {
   my ($r, $target, $arr) = @_;
   foreach my $file (@{$arr}) {
+
     if($file =~ /$target\.([^\.]+)_([^\.]+)\.(\d+)\.([^\.]+)\./) {
       $r->{'files'}{$file}{'specimen'} = $target;
       $r->{'files'}{$file}{'workflow_name'} = $1;
       my $workflow_version = $2;
-      $workflow_version =~ s/-/\./g;
-      $r->{'files'}{$file}{'workflow_version'} = $workflow_version;
       $r->{'files'}{$file}{'date'} = $3;
       $r->{'files'}{$file}{'specimen_type'} = $4;
+      $workflow_version =~ s/-/\./g;
+      $r->{'files'}{$file}{'workflow_version'} = $workflow_version;
     }
   }
 }
