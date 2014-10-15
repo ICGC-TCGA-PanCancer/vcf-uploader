@@ -177,8 +177,8 @@ my $input_json_hash = generate_input_json($metad);
 my $output_json_hash = generate_output_json($metad);
 
 #print Dumper ($metad);
-#print Dumper ($input_json_hash);
-#print Dumper ($output_json_hash);
+print Dumper ($input_json_hash);
+print Dumper ($output_json_hash);
 
 print "GENERATING SUBMISSION\n";
 my $sub_path = generate_submission($metad, $input_json_hash, $output_json_hash);
