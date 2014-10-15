@@ -139,6 +139,7 @@ if (scalar(@tarball_arr) != scalar(@md5_tarball_file_arr)) {
 print "COPYING FILES TO OUTPUT DIR\n";
 for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   my $vcf_check = `cat $md5_file_arr[$i]`;
+  print "CAT CODE! cat $md5_file_arr[$i]\n";
   my $idx_check = `cat $md5_idx_file_arr[$i]`;
   chomp $vcf_check;
   chomp $idx_check;
