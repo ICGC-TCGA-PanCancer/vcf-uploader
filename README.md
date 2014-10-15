@@ -133,6 +133,18 @@ You can find fake examples of VCF, tarball, and associated files in the sample_f
 * DONE -- MAJOR: currently you'll need to run the tool twice, once for germline upload and the second for somatic.  You can't mix the two otherwise you'll have an analysis that has a bunch of GNOS XML attributes from both.  The URL can be a comma seperated list, so should make sure I create a single analysis.xml for all submission files that correctly labels the various bits of the XML so that it's easy to tell what came from where.  The key is a single analysis.xml submission for a given workflow run so that way it's easy to tell the difference between different runs of the workflow.  You could still call the tool multiple times to give somatic/germline different analysis.xml and entries in the GNOS.  But it's better to have everything in one analysis ID on the server.
 * VALIDATION:
     * need to make sure each file conforms to the naming convention
+* probably want to type each of the input analysis records for issues like this:
+
+        <ANALYSIS_ATTRIBUTE>
+          <TAG>submitter_sample_id</TAG>
+          <VALUE>8051719</VALUE>
+        </ANALYSIS_ATTRIBUTE>
+        <ANALYSIS_ATTRIBUTE>
+          <TAG>submitter_sample_id</TAG>
+          <VALUE>8051442</VALUE>
+        </ANALYSIS_ATTRIBUTE>
+
+* get rid of "total_lanes"
 
 ## Bugs
 
