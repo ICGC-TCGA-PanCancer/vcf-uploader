@@ -84,15 +84,13 @@ An example for a germline VCF and a germline :
     cd sample_files
     perl ../gnos_upload_vcf.pl \
     --metadata-url https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e,https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087 \
-    --metadata-url-types normal,tumor \
-    --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz \
-    --vcf-types germline \
-    --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.md5 \
-    --vcf-idxs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.idx \
-    --vcf-idx-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.vcf.gz.idx.md5 \
-    --tarballs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz \
-    --tarball-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.tar.gz.md5 \
-    --tarball-types germline --outdir test --key test.pem \
+    --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz \
+    --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.md5 \
+    --vcf-idxs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.idx \
+    --vcf-idx-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.idx.md5 \
+    --tarballs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.tar.gz \
+    --tarball-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.tar.gz.md5 \
+    --outdir test --key test.pem \
     --upload-url https://gtrepo-ebi.annailabs.com \
     --study-refname-override icgc_pancancer_vcf_test --test
 
