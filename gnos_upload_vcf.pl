@@ -262,17 +262,8 @@ sub generate_output_json {
 
     # now files
     process_files($r, $target, \@vcf_arr);
-    #my @md5_file_arr = split /,/, $md5_file;
-    #my @vcf_types_arr = split /,/, $vcf_types;
-    #my @vcfs_idx_arr = split /,/, $vcfs_idx;
-    #my @md5_idx_file_arr = split /,/, $md5_idx_file;
-    #my @vcf_checksums;
-    #my @idx_checksums;
-    #my @tarball_checksums;
-    #my @tarball_arr = split /,/, $tarballs;
-    #my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
-    #my @tarball_types_arr = split /,/, $tarball_types;
-
+    process_files($r, $target, \@vcfs_idx_arr);
+    process_files($r, $target, \@tarball_arr);
 
     push(@{$d->{'workflow_outputs'}}, $r);
   }
