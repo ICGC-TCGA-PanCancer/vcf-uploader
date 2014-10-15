@@ -30,6 +30,7 @@ my $md5_idx_file = "";
 my $tarballs;
 my $md5_tarball_file;
 
+# TODO: Sheldon, we will need parameters to the program for the various hard-coded bits below
 my $parser = new XML::DOM::Parser;
 my $output_dir = "test_output_dir";
 my $key = "gnostest.pem";
@@ -45,7 +46,6 @@ my $workflow_name = "Workflow_Bundle_Broad_Cancer_Variant_Analysis";
 my $workflow_src_url = "https://github.com/broadinstitute/workflow-broad-cancer/tree/$workflow_version/workflow-broad-cancer";
 my $workflow_url = "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_Broad_Cancer_Variant_Analysis_".$workflow_version."_SeqWare_$seqware_version.zip";
 my $changelog_url = "https://github.com/broadinstitute/workflow-broad-cancer/blob/$workflow_version/workflow-broad-cancer/CHANGELOG.md";
-# TODO: add tools for this upload type
 my $force_copy = 0;
 my $study_ref_name = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
@@ -53,17 +53,16 @@ my $metadata_url;
 my $make_runxml = 0;
 my $make_expxml = 0;
 
-# TODO: check the counts here
+# TODO: check the argument counts here
 if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
   die "USAGE: 'perl gnos_upload_vcf.pl
-       --metadata-url <URL_for_specimen-level_aligned_BAM_input>
+       --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
        --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
        --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
        --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
        --tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>
        --tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>
-       --tarball-types <sample-level_tarball_file_types_comma_sep_if_multiple_same_order_as_vcfs>
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
@@ -122,6 +121,7 @@ my @tarball_checksums;
 my @tarball_arr = split /,/, $tarballs;
 my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 
+# TODO: Sheldon, we'll need more validation here, check each VCF file for headers etc. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 print "VALIDATING PARAMS\n";
 if (scalar(@vcf_arr) != scalar(@md5_file_arr)) {
   die "VCF and VCF md5sum file count don't match!\n";
@@ -176,14 +176,12 @@ my $input_json_hash = generate_input_json($metad);
 
 my $output_json_hash = generate_output_json($metad);
 
-# LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
-print Dumper ($metad);
-print Dumper ($input_json_hash);
-print Dumper ($output_json_hash);
-die;
+#print Dumper ($metad);
+#print Dumper ($input_json_hash);
+#print Dumper ($output_json_hash);
 
 print "GENERATING SUBMISSION\n";
-my $sub_path = generate_submission($metad);
+my $sub_path = generate_submission($metad, $input_json_hash, $output_json_hash);
 
 print "VALIDATING SUBMISSION\n";
 if (validate_submission($sub_path)) { die "The submission did not pass validation! Files are located at: $sub_path\n"; }
@@ -259,6 +257,8 @@ sub generate_output_json {
   return($d);
 }
 
+# parse info from the file name
+# TODO: Sheldon, want better validation here... something that barfs if extra files are provided that don't conform to the naming standard. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 sub process_files {
   my ($r, $target, $arr) = @_;
   foreach my $file (@{$arr}) {
@@ -332,7 +332,7 @@ sub modify_manifest_file {
 
 sub generate_submission {
 
-  my ($m) = @_;
+  my ($m, $input_json_hash, $output_json_hash) = @_;
 
   # const
   my $t = gmtime;
@@ -436,7 +436,7 @@ sub generate_submission {
   my $analysis_xml = <<END;
   <ANALYSIS_SET xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/sra/doc/SRA_1-5/SRA.analysis.xsd?view=co">
     <ANALYSIS center_name="$center_name" analysis_center="$analysis_center" analysis_date="$datetime">
-      <TITLE>TCGA/ICGC PanCancer Specimen-Level Alignment for Specimen $sample_id from Participant $participant_id</TITLE>
+      <TITLE>TCGA/ICGC PanCancer Donor-Level Variant Calling for Participant $participant_id</TITLE>
       <STUDY_REF refcenter="$refcenter" refname="$study_ref_name" />
       <DESCRIPTION>$description</DESCRIPTION>
       <ANALYSIS_TYPE>
@@ -564,7 +564,7 @@ END
             <PIPELINE>
 END
 
-# TODO: these need to come from a template instead
+# TODO: Sheldon, these need to come from a template instead
 
     $analysis_xml .= <<END;
                   <PIPE_SECTION section_name="ContaminationAnalysis">
@@ -638,10 +638,12 @@ END
 
     # this is a merge of the key-values from input XML
     # changing some key names to prevent conflicts
+    # I'm actually now skipping a lot more than before since 1) combining multiple inputs makes this more complex, 2) I have a nice JSON that describes inputs/outputs and 3) folks can look back at the original BAM analysis.xml for more details if they need it, no need to duplicate here.
     foreach my $key (keys %{$global_attr}) {
       foreach my $val (keys %{$global_attr->{$key}}) {
     	  if ($key eq "pipeline_input_info") {
-          $key = "alignment_pipeline_input_info";
+          #$key = "alignment_pipeline_input_info";
+          next;
         } elsif ($key eq "workflow_name") {
           $key = "alignment_workflow_name";
         } elsif ($key eq "workflow_version") {
@@ -651,19 +653,26 @@ END
         } elsif ($key eq "workflow_bundle_url") {
           $key = "alignment_workflow_bundle_url";
         } elsif ($key eq "workflow_output_bam_contents") {
-          $key = "alignment_workflow_output_bam_contents";
+          #$key = "alignment_workflow_output_bam_contents";
+          next;
         } elsif ($key eq "qc_metrics") {
-          $key = "alignment_qc_metrics";
+          #$key = "alignment_qc_metrics";
+          next;
         } elsif ($key eq "timing_metrics") {
-          $key = "alignment_timing_metrics";
+          #$key = "alignment_timing_metrics";
+          next;
         } elsif ($key eq "markduplicates_metrics") {
-          $key = "alignment_markduplicates_metrics";
+          #$key = "alignment_markduplicates_metrics";
+          next;
         } elsif ($key eq "bwa_version") {
-          $key = "alignment_bwa_version";
+          #$key = "alignment_bwa_version";
+          next;
         } elsif ($key eq "biobambam_version") {
-          $key = "alignment_biobambam_version";
+          #$key = "alignment_biobambam_version";
+          next;
         } elsif ($key eq "PCAP-core_version") {
-          $key = "alignment_PCAP-core_version";
+          #$key = "alignment_PCAP-core_version";
+          next;
         }
 
         $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
@@ -676,9 +685,19 @@ END
 
   # TODO
   # variant_pipeline_input_info
+  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
+          <TAG>variant_pipeline_input_info</TAG>
+          <VALUE>" . &to_json($input_json_hash) . "</VALUE>
+        </ANALYSIS_ATTRIBUTE>
+";
 
   # TODO
   # variant_pipeline_output_info
+  $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
+          <TAG>variant_pipeline_output_info</TAG>
+          <VALUE>" . &to_json($output_json_hash) . "</VALUE>
+        </ANALYSIS_ATTRIBUTE>
+";
 
   # some metadata about this workflow
   $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
@@ -1000,6 +1019,11 @@ sub read_timing {
   my $delta = $stop - $start;
   close IN;
   return($delta);
+}
+
+sub to_json {
+  my ($d) = @_;
+  return(encode_json($d));
 }
 
 sub getQcResult {
