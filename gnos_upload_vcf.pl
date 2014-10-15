@@ -126,9 +126,6 @@ print "VALIDATING PARAMS\n";
 if (scalar(@vcf_arr) != scalar(@md5_file_arr)) {
   die "VCF and VCF md5sum file count don't match!\n";
 }
-if (scalar(@vcf_arr) != scalar(@vcf_types_arr)) {
-  die "VCF and VCF types count don't match!\n";
-}
 if (scalar(@vcf_arr) != scalar(@vcfs_idx_arr)) {
   die "VCF and VCF index count don't match!\n";
 }
