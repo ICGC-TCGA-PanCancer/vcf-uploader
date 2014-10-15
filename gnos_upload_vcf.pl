@@ -183,8 +183,13 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
 print "DOWNLOADING METADATA FILES\n";
 my $metad = download_metadata($metadata_url);
 
+my $input_json_hash = generate_input_json($metad);
+
+my $output_json_hash = generate_output_json();
+
 # LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
 print Dumper ($metad);
+print Dumper ($input_json_hash);
 die;
 
 print "GENERATING SUBMISSION\n";
@@ -200,6 +205,42 @@ if (upload_submission($sub_path)) { die "The upload of files did not work!  File
 ###############
 # SUBROUTINES #
 ###############
+
+# this method generates a nice summary of the inputs to this workflow
+# for inclusion in the analysis.xml
+sub generate_input_json {
+  my ($metad) = @_;
+  my $d = {};
+  # cleanup and pull out the info I want, key off of specimen ID e.g. the SM field in the BAM header aka the aliquot_id in SRA XML
+  foreach my $url (keys %{$metad}) {
+    print "URL: $url\n";
+    # pull back the target sample UUID
+    my $target = $metad->{$url}{'target'}[0]{'refname'};
+    # now fill in various info
+    my $r = {};
+    $r->{'specimen'} = $target;
+    $r->{'attributes'}{'center_name'} = $metad->{$url}{'center_name'};
+    $r->{'attributes'}{'analysis_id'} = $metad->{$url}{'analysis_id'};
+    $r->{'attributes'}{'analysis_url'} = $url;
+    $r->{'attributes'}{'study_ref'} = $metad->{$url}{'study_ref'}[0]{'refname'};
+    $r->{'attributes'}{'dcc_project_code'} = $metad->{$url}{'analysis_attr'}{'dcc_project_code'};
+    $r->{'attributes'}{'submitter_donor_id'} = $metad->{$url}{'analysis_attr'}{'submitter_donor_id'};
+    $r->{'attributes'}{'submitter_sample_id'} = $metad->{$url}{'analysis_attr'}{'submitter_sample_id'};
+    $r->{'attributes'}{'dcc_specimen_type'} = $metad->{$url}{'analysis_attr'}{'dcc_specimen_type'};
+    $r->{'attributes'}{'use_cntl'} = $metad->{$url}{'analysis_attr'}{'use_cntl'};
+    $r->{'attributes'}{'submitter_specimen_id'} = $metad->{$url}{'analysis_attr'}{'submitter_specimen_id'};
+
+    push(@{$d->{'workflow_inputs'}}, $r);
+  }
+  return($d);
+  # TODO, need to flatten out the hash generated here
+}
+
+# this method generates a nice summary of the outputs from this workflow
+# for inclusion in the analysis.xml
+sub generate_output_json {
+
+}
 
 sub validate_submission {
   my ($sub_path, $vcf_check) = @_;
