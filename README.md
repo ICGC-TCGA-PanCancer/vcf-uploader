@@ -143,6 +143,7 @@ You can find fake examples of VCF, tarball, and associated files in the sample_f
         </ANALYSIS_ATTRIBUTE>
 
 * get rid of "total_lanes"
+* if not provided, compute the md5sums for the submitter
 
 ## Bugs
 
