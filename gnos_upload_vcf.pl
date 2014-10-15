@@ -223,12 +223,12 @@ sub generate_input_json {
     $r->{'attributes'}{'analysis_id'} = $metad->{$url}{'analysis_id'};
     $r->{'attributes'}{'analysis_url'} = $url;
     $r->{'attributes'}{'study_ref'} = $metad->{$url}{'study_ref'}[0]{'refname'};
-    $r->{'attributes'}{'dcc_project_code'} = $metad->{$url}{'analysis_attr'}{'dcc_project_code'};
-    $r->{'attributes'}{'submitter_donor_id'} = $metad->{$url}{'analysis_attr'}{'submitter_donor_id'};
-    $r->{'attributes'}{'submitter_sample_id'} = $metad->{$url}{'analysis_attr'}{'submitter_sample_id'};
-    $r->{'attributes'}{'dcc_specimen_type'} = $metad->{$url}{'analysis_attr'}{'dcc_specimen_type'};
-    $r->{'attributes'}{'use_cntl'} = $metad->{$url}{'analysis_attr'}{'use_cntl'};
-    $r->{'attributes'}{'submitter_specimen_id'} = $metad->{$url}{'analysis_attr'}{'submitter_specimen_id'};
+    $r->{'attributes'}{'dcc_project_code'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'dcc_project_code'}});
+    $r->{'attributes'}{'submitter_donor_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_donor_id'}});
+    $r->{'attributes'}{'submitter_sample_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_sample_id'}});
+    $r->{'attributes'}{'dcc_specimen_type'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'dcc_specimen_type'}});
+    $r->{'attributes'}{'use_cntl'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'use_cntl'}});
+    $r->{'attributes'}{'submitter_specimen_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_specimen_id'}});
 
     push(@{$d->{'workflow_inputs'}}, $r);
   }
