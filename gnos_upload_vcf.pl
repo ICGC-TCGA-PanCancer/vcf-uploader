@@ -288,7 +288,8 @@ sub process_files {
       my $workflow_version = $2;
       $workflow_version =~ s/-/\./g;
       $r->{'files'}{$file}{'workflow_version'} = $workflow_version;
-      $r->{'files'}{$file}{'specimen_type'} = $3;
+      $r->{'files'}{$file}{'date'} = $3;
+      $r->{'files'}{$file}{'specimen_type'} = $4;
     }
   }
 }
