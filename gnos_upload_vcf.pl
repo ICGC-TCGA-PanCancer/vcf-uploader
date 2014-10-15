@@ -284,9 +284,9 @@ sub process_files {
   foreach my $file (@{$arr}) {
     if($file =~ /$target\.([^\.]+)_([^\.]+)\.(\d+)\.([^\.]+)\./) {
       $r->{'files'}{$file}{'specimen'} = $target;
-      $r->{'files'}{$file}{'workflow_name'} = $2;
-      $r->{'files'}{$file}{'workflow_version'} = $3;
-      $r->{'files'}{$file}{'specimen_type'} = $4;
+      $r->{'files'}{$file}{'workflow_name'} = $1;
+      $r->{'files'}{$file}{'workflow_version'} = $2;
+      $r->{'files'}{$file}{'specimen_type'} = $3;
     }
   }
 }
