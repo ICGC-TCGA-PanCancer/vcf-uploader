@@ -1021,11 +1021,6 @@ sub read_timing {
   return($delta);
 }
 
-sub to_json {
-  my ($d) = @_;
-  return(encode_json($d));
-}
-
 sub getQcResult {
   # detect all the QC report files by checking file name pattern
 
