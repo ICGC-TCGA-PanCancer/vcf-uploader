@@ -28,7 +28,6 @@ my $md5_file = "";
 my $vcfs_idx;
 my $md5_idx_file = "";
 my $tarballs;
-my $tarball_types;
 my $md5_tarball_file;
 
 my $parser = new XML::DOM::Parser;
@@ -59,7 +58,6 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
   die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-url <URL_for_specimen-level_aligned_BAM_input>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
-       --vcf-types <sample-level_vcf_file_types_comma_sep_if_multiple_same_order_as_vcfs>
        --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
        --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
        --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
@@ -81,12 +79,10 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
 GetOptions(
      "metadata-url=s" => \$metadata_url,
      "vcfs=s" => \$vcfs,
-     "vcf-types=s" => \$vcf_types,
      "vcf-md5sum-files=s" => \$md5_file,
      "vcf-idxs=s" => \$vcfs_idx,
      "vcf-idx-md5sum-files=s" => \$md5_idx_file,
      "tarballs=s" => \$tarballs,
-     "tarball-types=s" => \$tarball_types,
      "tarball-md5sum-files=s" => \$md5_tarball_file,
      "outdir=s" => \$output_dir,
      "key=s" => \$key,
@@ -125,7 +121,6 @@ my @idx_checksums;
 my @tarball_checksums;
 my @tarball_arr = split /,/, $tarballs;
 my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
-my @tarball_types_arr = split /,/, $tarball_types;
 
 print "VALIDATING PARAMS\n";
 if (scalar(@vcf_arr) != scalar(@md5_file_arr)) {
@@ -142,9 +137,6 @@ if (scalar(@vcf_arr) != scalar(@md5_idx_file_arr)) {
 }
 if (scalar(@tarball_arr) != scalar(@md5_tarball_file_arr)) {
   die "Tarball and Tarball md5sum count don't match!\n";
-}
-if (scalar(@tarball_arr) != scalar(@tarball_types_arr)) {
-  die "Tarball and Tarball types count don't match!\n";
 }
 
 print "COPYING FILES TO OUTPUT DIR\n";
