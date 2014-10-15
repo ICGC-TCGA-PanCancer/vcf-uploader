@@ -146,14 +146,14 @@ for(my $i=0; $i<scalar(@vcf_arr); $i++) {
   push @idx_checksums, $idx_check;
   if ($force_copy) {
     # rsync to destination
-    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/ && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/");
+    #run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/ && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/");
     # INFO: I was thinking about renaming files but I think it's safer to not do this
-    #run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check= && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
+    run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf.gz && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.gz.idx");
   } else {
     # symlink for bam and md5sum file
-    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/ && ln -s `pwd`/$md5_file_arr[$i] $output_dir/ && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/ && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/");
+    #run("ln -s `pwd`/$vcf_arr[$i] $output_dir/ && ln -s `pwd`/$md5_file_arr[$i] $output_dir/ && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/ && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/");
     # INFO
-    #run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf && ln -s `pwd`/$md5_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$vcf_check.vcf.md5 && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx && ln -s `pwd`/$md5_idx_file_arr[$i] $output_dir/$vcf_types_arr[$i]_$idx_check.vcf.idx.md5");
+    run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf.gz && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.gz.idx");
   }
 }
 
@@ -162,10 +162,10 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
   chomp $tarball_check;
   push @tarball_checksums, $tarball_check;
   if ($force_copy) {
-    run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/");
-    #run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/$tarball_types_arr[$i]_$tarball_check.tar.gz.md5");
+    #run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_tarball_file_arr[$i] $output_dir/");
+    run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_check.tar.gz");
   } else {
-    run("ln -s `pwd`/$tarball_arr[$i] $output_dir/ && ln -s `pwd`/$md5_tarball_file_arr[$i] $output_dir/");
+    run("ln -s `pwd`/$tarball_arr[$i] $output_dir/$tarball_check.tar.gz");
   }
 }
 
