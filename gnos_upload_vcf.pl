@@ -190,6 +190,7 @@ my $output_json_hash = generate_output_json();
 # LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
 print Dumper ($metad);
 print Dumper ($input_json_hash);
+print Dumper ($output_json_hash);
 die;
 
 print "GENERATING SUBMISSION\n";
@@ -233,13 +234,56 @@ sub generate_input_json {
     push(@{$d->{'workflow_inputs'}}, $r);
   }
   return($d);
-  # TODO, need to flatten out the hash generated here
 }
 
 # this method generates a nice summary of the outputs from this workflow
 # for inclusion in the analysis.xml
 sub generate_output_json {
+  my ($metad) = @_;
+  my $d = {};
+  # cleanup and pull out the info I want, key off of specimen ID e.g. the SM field in the BAM header aka the aliquot_id in SRA XML
+  foreach my $url (keys %{$metad}) {
+    print "URL: $url\n";
+    # pull back the target sample UUID
+    my $target = $metad->{$url}{'target'}[0]{'refname'};
+    # now fill in various info
+    my $r = {};
+    $r->{'specimen'} = $target;
+    $r->{'attributes'}{'center_name'} = $metad->{$url}{'center_name'};
+    $r->{'attributes'}{'analysis_id'} = $metad->{$url}{'analysis_id'};
+    $r->{'attributes'}{'analysis_url'} = $url;
+    $r->{'attributes'}{'study_ref'} = $metad->{$url}{'study_ref'}[0]{'refname'};
+    $r->{'attributes'}{'dcc_project_code'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'dcc_project_code'}});
+    $r->{'attributes'}{'submitter_donor_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_donor_id'}});
+    $r->{'attributes'}{'submitter_sample_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_sample_id'}});
+    $r->{'attributes'}{'dcc_specimen_type'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'dcc_specimen_type'}});
+    $r->{'attributes'}{'use_cntl'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'use_cntl'}});
+    $r->{'attributes'}{'submitter_specimen_id'} = join(",", keys %{$metad->{$url}{'analysis_attr'}{'submitter_specimen_id'}});
 
+    # now files
+    process_files($r, $target, \@vcf_arr);
+    #my @md5_file_arr = split /,/, $md5_file;
+    #my @vcf_types_arr = split /,/, $vcf_types;
+    #my @vcfs_idx_arr = split /,/, $vcfs_idx;
+    #my @md5_idx_file_arr = split /,/, $md5_idx_file;
+    #my @vcf_checksums;
+    #my @idx_checksums;
+    #my @tarball_checksums;
+    #my @tarball_arr = split /,/, $tarballs;
+    #my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
+    #my @tarball_types_arr = split /,/, $tarball_types;
+
+
+    push(@{$d->{'workflow_inputs'}}, $r);
+  }
+  return($d);
+}
+
+sub process_files {
+  my ($r, $target, $arr) = @_;
+  foreach my $file (@{$arr}) {
+    $r->{'files'}{$target}{$file} = 1;
+  }
 }
 
 sub validate_submission {
