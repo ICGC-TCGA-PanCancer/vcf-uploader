@@ -285,7 +285,9 @@ sub process_files {
     if($file =~ /$target\.([^\.]+)_([^\.]+)\.(\d+)\.([^\.]+)\./) {
       $r->{'files'}{$file}{'specimen'} = $target;
       $r->{'files'}{$file}{'workflow_name'} = $1;
-      $r->{'files'}{$file}{'workflow_version'} = $2;
+      my $workflow_version = $2;
+      $workflow_version =~ s/_/\./g;
+      $r->{'files'}{$file}{'workflow_version'} = $workflow_version;
       $r->{'files'}{$file}{'specimen_type'} = $3;
     }
   }
