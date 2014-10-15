@@ -286,7 +286,7 @@ sub process_files {
       $r->{'files'}{$file}{'specimen'} = $target;
       $r->{'files'}{$file}{'workflow_name'} = $1;
       my $workflow_version = $2;
-      $workflow_version =~ s/_/\./g;
+      $workflow_version =~ s/-/\./g;
       $r->{'files'}{$file}{'workflow_version'} = $workflow_version;
       $r->{'files'}{$file}{'specimen_type'} = $3;
     }
