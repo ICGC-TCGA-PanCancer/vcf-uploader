@@ -185,7 +185,7 @@ my $metad = download_metadata($metadata_url);
 
 my $input_json_hash = generate_input_json($metad);
 
-my $output_json_hash = generate_output_json();
+my $output_json_hash = generate_output_json($metad);
 
 # LEFT OFF HERE: need to make the JSON descriptor of the input sample-level data
 print Dumper ($metad);
