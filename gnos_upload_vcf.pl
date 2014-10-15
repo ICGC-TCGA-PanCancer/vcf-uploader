@@ -274,7 +274,7 @@ sub generate_output_json {
     #my @tarball_types_arr = split /,/, $tarball_types;
 
 
-    push(@{$d->{'workflow_inputs'}}, $r);
+    push(@{$d->{'workflow_outputs'}}, $r);
   }
   return($d);
 }
