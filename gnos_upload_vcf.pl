@@ -56,9 +56,12 @@ my $make_runxml = 0;
 my $make_expxml = 0;
 my $description_file = "";
 my $pipeline_json_file = "";
+my $qc_json_file = "";
+my $timing_json_file = "";
+
 
 # TODO: check the argument counts here
-if (scalar(@ARGV) < 12 || scalar(@ARGV) > 42) {
+if (scalar(@ARGV) < 12 || scalar(@ARGV) > 46) {
   die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
@@ -79,6 +82,8 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 42) {
        [--study-refname-override <study_refname_override>]
        [--analysis-center-override <analysis_center_override>]
        [--pipeline-json <pipeline_json_file>]
+       [--qc-metrics-json <qc_metrics_json_file>]
+       [--timing-metrics-json <timing_metrics_json_file>]
        [--make-runxml]
        [--make-expxml]
        [--force-copy]
@@ -106,6 +111,8 @@ GetOptions(
      "study-refname-override=s" => \$study_ref_name,
      "analysis-center-override=s" => \$analysis_center,
      "pipeline-json=s" => \$pipeline_json,
+     "qc-json=s" => \$qc_json_file,
+     "timing-json=s" => \$timing_json_file,
      "make-runxml" => \$make_runxml,
      "make-expxml" => \$make_expxml,
      "force-copy" => \$force_copy,
