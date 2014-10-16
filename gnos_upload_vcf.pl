@@ -92,7 +92,7 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 46) {
        [--test]\n"; }
 
 GetOptions(
-     "metadata-url=s" => \$metadata_url,
+     "metadata-urls=s" => \$metadata_url,
      "vcfs=s" => \$vcfs,
      "vcf-md5sum-files=s" => \$md5_file,
      "vcf-idxs=s" => \$vcfs_idx,
