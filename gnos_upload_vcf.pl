@@ -675,6 +675,9 @@ END
         } elsif ($key eq "PCAP-core_version") {
           #$key = "alignment_PCAP-core_version";
           next;
+        } elsif ($key eq "total_lanes" || $key eq "dcc_specimen_type" || $key eq "use_cntl" || $key eq "submitter_specimen_id" || $key eq "submitter_sample_id") {
+          #$key = "alignment_PCAP-core_version";
+          next;
         }
 
         $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
