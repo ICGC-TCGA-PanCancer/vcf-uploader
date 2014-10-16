@@ -191,14 +191,8 @@ for(my $i=0; $i<scalar(@tarball_arr); $i++) {
 
 print "DOWNLOADING METADATA FILES\n";
 my $metad = download_metadata($metadata_url);
-
 my $input_json_hash = generate_input_json($metad);
-
 my $output_json_hash = generate_output_json($metad);
-
-#print Dumper ($metad);
-print Dumper ($input_json_hash);
-print Dumper ($output_json_hash);
 
 print "GENERATING SUBMISSION\n";
 my $sub_path = generate_submission($metad, $input_json_hash, $output_json_hash);
@@ -592,22 +586,39 @@ END
             <PIPELINE>
 END
 
-# TODO: Sheldon, these need to come from a template instead
-# LEFT OFF HERE
     if ($pipeline_json_file ne "" && -e $pipeline_json_file) {
       local $/ = undef;
       open FILE, "<$pipeline_json_file" or die "Couldn't open file: $!";
       binmode FILE;
       my $json = <FILE>;
       close FILE;
+      my $d = decode_json($json);
+      foreach my $r (@{$d->{'pipe'}}) {
+        my $section_name = $r->{'section_name'};
+        my $step_index = $r->{'step_index'};
+        my $previous_step_index = $r->{'previous_step_index'};
+        my $program = $r->{'program'};
+        my $version = $r->{'version'};
+        my $notes = $r->{'notes'};
+
+        $analysis_xml .= <<END;
+                    <PIPE_SECTION section_name="$section_name">
+                      <STEP_INDEX>$step_index</STEP_INDEX>
+                      <PREV_STEP_INDEX>$previous_step_index</PREV_STEP_INDEX>
+                      <PROGRAM>$program</PROGRAM>
+                      <VERSION>$version</VERSION>
+                      <NOTES>$notes</NOTES>
+                    </PIPE_SECTION>
+END
+      }
 
     } else {
       $analysis_xml .= <<END;
-                  <PIPE_SECTION section_name="ContaminationAnalysis">
+                  <PIPE_SECTION section_name="SeqWare_$seqware_version">
                     <STEP_INDEX>1</STEP_INDEX>
                     <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
-                    <PROGRAM>Queue</PROGRAM>
-                    <VERSION>1.4-437-g6b8a9e1-svn-35362</VERSION>
+                    <PROGRAM>$workflow_name</PROGRAM>
+                    <VERSION>$workflow_version</VERSION>
                     <NOTES></NOTES>
                   </PIPE_SECTION>
 END
@@ -981,7 +992,7 @@ sub getVals {
   return(@r);
 }
 
-# TODO: will need to be updated to support
+# Sheldon TODO: will need to be updated to support a more generic format
 sub getRuntimeInfo {
   # detect all the timing files by checking file name pattern, read QC data
   # to pull back the read group and associate with timing
@@ -1041,6 +1052,7 @@ sub read_timing {
   return($delta);
 }
 
+# TODO
 sub getQcResult {
   # detect all the QC report files by checking file name pattern
 

@@ -4,7 +4,7 @@
 
 This tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  It is designed to be called as a step in a workflow or manually if needed.
 
-This tool needs to produce VCF uploads that conform to the PanCancer VCF upload spect, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
+This tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
 ## Dependencies
 
@@ -15,6 +15,8 @@ You can use PerlBrew (or your native package manager) to install dependencies.  
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
 You also need the gtdownload/gtuplod/cgsubmit tools installed.  These are available on the CGHub site and are only available for Linux (for the submission tools).
+
+TODO: Sheldon, you'll want to have a dependency on VCF validation tool(s).
 
 ## Inputs
 
@@ -50,7 +52,7 @@ The $META data string must be made up of the following fields (with "." as a fie
 | Date             | Date of creation                              | yyyymmdd                             |
 | Type             | "somatic" or "germline"                       | "somatic" or "germline"              |
 
-There may be multiple somatic call file sets each with different samples IDs if, for example, there is a cell-line, metastasis, second tumor sample.  There should be one set of germline files.
+There may be multiple somatic call file sets each with different samples IDs if, for example, there is a cell-line, metastasis, second tumor sample, etc.  There should be one set of germline files.
 
 Note: the variant calling working group has specified ".tbi" rather than ".idx" as the tabix index extension. I have asked Annai to add support for ".tbi" and will update the code to standardize on this once the GNOS changes have been made.  Also, a README needs to be included in each tar.gz file to document the contents. In the pilot this was a separate README file but GNOS does not support uploading this directly and, therefore, it needs to included in the tar.gz file.
 
@@ -59,27 +61,33 @@ Note: the variant calling working group has specified ".tbi" rather than ".idx" 
 The parameters:
 
     perl gnos_upload_vcf.pl
-       --metadata-url <URL_for_specimen-level_aligned_BAM_input>
+       --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
-       --vcf-types <sample-level_vcf_file_types_comma_sep_if_multiple_same_order_as_vcfs>
        --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
        --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
        --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
        --tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>
        --tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>
-       --tarball-types <sample-level_tarball_file_types_comma_sep_if_multiple_same_order_as_vcfs>
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
-       [--suppress-runxml]
-       [--suppress-expxml]
-       [--force-copy]
+       [--workflow-src-url <http://... the source repo>]
+       [--workflow-url <http://... the packaged SeqWare Zip>]
+       [--workflow-name <workflow_name>]
+       [--workflow-version <workflow_version>]
+       [--seqware-version <seqware_version_workflow_compiled_with>]
+       [--description-file <file_path_for_description_txt>]
        [--study-refname-override <study_refname_override>]
        [--analysis-center-override <analysis_center_override>]
+       [--pipeline-json <pipeline_json_file>]
+       [--make-runxml]
+       [--make-expxml]
+       [--force-copy]
        [--skip-validate]
+       [--skip-upload]
        [--test]
 
-An example for a germline VCF and a germline :
+An example for the files that have been checked in along with this code:
 
     cd sample_files
     perl ../gnos_upload_vcf.pl \
@@ -94,7 +102,7 @@ An example for a germline VCF and a germline :
     --upload-url https://gtrepo-ebi.annailabs.com \
     --study-refname-override icgc_pancancer_vcf_test --test
 
-Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than single analysis records for each individual set of files.
+Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than multiple analysis records for each individual set of files.
 
 ## Test Data
 
@@ -113,9 +121,23 @@ The sample command above is using the Donor ICGC_0437 as an example:
                 NORMAL: https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e
                 SAMPLE UUID: 914ee592-e855-43d3-8767-a96eb6d1f067
 
-You can find fake examples of VCF, tarball, and associated files in the sample_files directory.
+You can find fake examples of VCF, tarball, and associated files in the "sample_files" directory.
 
-## Pipe JSON
+## Timing JSON Format
+
+This JSON format lets you specify runtime information for recording in the analysis.xml metadata submission file.
+
+TODO: Sheldon, you'll want to define a JSON format for this
+
+## QC JSON Format
+
+This JSON format lets you specify QC statistics for recording in the analysis.xml metadata submission file.
+
+TODO: Sheldon, you'll want to define a JSON format for this
+
+## Pipe JSON Format
+
+This JSON format lets you specify details about the individual steps of the workflow.  If this is not specified than a single step will be recorded in the analysis.xml metadata file that reflects the name and version of the workflow.
 
 The format of the Pipe JSON for that section of the XML:
 
@@ -136,33 +158,14 @@ The format of the Pipe JSON for that section of the XML:
 
 ## To Do
 
-* need to add params for various hard-coded items below so the same script can be used for multiple variant workflows. For example workflow name, version, etc
-* removed hard coded files and replace with templates
-* we need a way to pass in a JSON that describes the steps of the workflow or just use a template above
-* the description needs details about the files produced by the workflow, naming conventions, etc
-* need to add support for runtime and qc information files in a generic way
-* support for ".tbi" extensions rather than ".idx" (GNOS issue)
-* what about the "--metadata-url-types normal,tumor" parameter, what's going on with this?  What controlled vocab to use here?
-* MAJOR: need a variant calling workflow input JSON summary -- DONE
-    * input will be 2 or more metadata URLs.  Will need to assign types to each of these and organize the JSON info lifted over from these BAMs' metadata into typed JSON documents e.g. the germline JSON doc
-* MAJOR: need a key-value attribute that documents each VCF/tarball file, what specimens they contain, the variant types they contain, etc. -- DONE
-* MAJOR: need to be able to support mulitple --metadata-url for, example, the somatic calls will combine the normal and tumor aligned BAMs -- DONE
-* DONE -- MAJOR: currently you'll need to run the tool twice, once for germline upload and the second for somatic.  You can't mix the two otherwise you'll have an analysis that has a bunch of GNOS XML attributes from both.  The URL can be a comma seperated list, so should make sure I create a single analysis.xml for all submission files that correctly labels the various bits of the XML so that it's easy to tell what came from where.  The key is a single analysis.xml submission for a given workflow run so that way it's easy to tell the difference between different runs of the workflow.  You could still call the tool multiple times to give somatic/germline different analysis.xml and entries in the GNOS.  But it's better to have everything in one analysis ID on the server.
-* VALIDATION:
+* removed hard coded XML files and replace with Template Toolkit templates (or something similar)
+* need to add support for runtime and qc information files in a generic way (JSON file?)
+* support for ".tbi" extensions rather than ".idx" (GNOS issue, would have be resolved by Annai on each GNOS server)
+* validation needs to be implemented:
     * need to make sure each file conforms to the naming convention
-* probably want to type each of the input analysis records for issues like this:
-
-        <ANALYSIS_ATTRIBUTE>
-          <TAG>submitter_sample_id</TAG>
-          <VALUE>8051719</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-        <ANALYSIS_ATTRIBUTE>
-          <TAG>submitter_sample_id</TAG>
-          <VALUE>8051442</VALUE>
-        </ANALYSIS_ATTRIBUTE>
-
-* get rid of "total_lanes"
-* if not provided, compute the md5sums for the submitter
+    * need to ensure the headers (and contents) of VCF conform to the upload SOP, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
+    * need to run the VCF files through VCFTools validation
+* if not provided as files/params, compute the md5sums for the submitted files
 
 ## Bugs
 
