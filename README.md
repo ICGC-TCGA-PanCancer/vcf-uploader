@@ -115,6 +115,25 @@ The sample command above is using the Donor ICGC_0437 as an example:
 
 You can find fake examples of VCF, tarball, and associated files in the sample_files directory.
 
+## Pipe JSON
+
+The format of the Pipe JSON for that section of the XML:
+
+{
+  "pipe": [
+    ...,
+    {
+      "section_name": "name",
+      "step_index": "2",
+      "previous_step_index": "1",  
+      "program": "tool name",
+      "version": "1.2.1",
+      "notes": "typically params used as a string"
+    },
+    ...
+  ]
+}
+
 ## To Do
 
 * need to add params for various hard-coded items below so the same script can be used for multiple variant workflows. For example workflow name, version, etc

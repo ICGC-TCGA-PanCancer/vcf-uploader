@@ -18,6 +18,8 @@ use Time::Piece;
 # Also see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0        #
 #############################################################################################
 
+# LEFT OFF WITH: working on pipeline JSON
+
 #############
 # VARIABLES #
 #############
@@ -39,22 +41,24 @@ my $test = 0;
 my $skip_validate = 0;
 my $skip_upload = 0;
 # hardcoded
-my $seqware_version = "1.0.15";
+my $seqware_version = "1.1.0-alpha.4";
 my $workflow_version = "1.0.0";
-my $workflow_name = "Workflow_Bundle_Broad_Cancer_Variant_Analysis";
+my $workflow_name = "Workflow_Bundle_Test_Cancer_Variant_Analysis";
 # hardcoded
-my $workflow_src_url = "https://github.com/broadinstitute/workflow-broad-cancer/tree/$workflow_version/workflow-broad-cancer";
-my $workflow_url = "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_Broad_Cancer_Variant_Analysis_".$workflow_version."_SeqWare_$seqware_version.zip";
-my $changelog_url = "https://github.com/broadinstitute/workflow-broad-cancer/blob/$workflow_version/workflow-broad-cancer/CHANGELOG.md";
+my $workflow_src_url = "https://github.com/testproject/workflow-test-cancer/tree/$workflow_version/workflow-broad-cancer";
+my $workflow_url = "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_Test_Cancer_Variant_Analysis_".$workflow_version."_SeqWare_$seqware_version.zip";
+my $changelog_url = "https://github.com/testproject/workflow-test-cancer/blob/$workflow_version/workflow-test-cancer/CHANGELOG.md";
 my $force_copy = 0;
 my $study_ref_name = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
 my $metadata_url;
 my $make_runxml = 0;
 my $make_expxml = 0;
+my $description_file = "";
+my $pipeline_json_file = "";
 
 # TODO: check the argument counts here
-if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
+if (scalar(@ARGV) < 12 || scalar(@ARGV) > 42) {
   die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
@@ -66,11 +70,18 @@ if (scalar(@ARGV) < 12 || scalar(@ARGV) > 36) {
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
+       [--workflow-src-url <http://... the source repo>]
+       [--workflow-url <http://... the packaged SeqWare Zip>]
+       [--workflow-name <workflow_name>]
+       [--workflow-version <workflow_version>]
+       [--seqware-version <seqware_version_workflow_compiled_with>]
+       [--description-file <file_path_for_description_txt>]
+       [--study-refname-override <study_refname_override>]
+       [--analysis-center-override <analysis_center_override>]
+       [--pipeline-json <pipeline_json_file>]
        [--make-runxml]
        [--make-expxml]
        [--force-copy]
-       [--study-refname-override <study_refname_override>]
-       [--analysis-center-override <analysis_center_override>]
        [--skip-validate]
        [--skip-upload]
        [--test]\n"; }
@@ -86,14 +97,21 @@ GetOptions(
      "outdir=s" => \$output_dir,
      "key=s" => \$key,
      "upload-url=s" => \$upload_url,
-     "test" => \$test,
+     "workflow-src-url=s" => \$workflow_src_url,
+     "workflow-url=s" => \$workflow_url,
+     "workflow-name=s" => \$workflow_name,
+     "workflow-version=s" => \$workflow_version,
+     "seqware-version=s" => \$seqware_version,
+     "description-file=s" => \$description_file,
+     "study-refname-override=s" => \$study_ref_name,
+     "analysis-center-override=s" => \$analysis_center,
+     "pipeline-json=s" => \$pipeline_json,
      "make-runxml" => \$make_runxml,
      "make-expxml" => \$make_expxml,
      "force-copy" => \$force_copy,
      "skip-validate" => \$skip_validate,
      "skip-upload" => \$skip_upload,
-     "study-refname-override=s" => \$study_ref_name,
-     "analysis-center-override=s" => \$analysis_center,
+     "test" => \$test,
      );
 
 
@@ -435,6 +453,14 @@ sub generate_submission {
 
   my $description = "This is the variant calling for specimen $sample_id from donor $participant_id. The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the $workflow_name workflow, version $workflow_version available at $workflow_url. This workflow can be created from source, see $workflow_src_url. For a complete change log see $changelog_url. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference.";
 
+  if ($description_file ne "" && -e $description_file) {
+    local $/ = undef;
+    open FILE, "<$description_file" or die "Couldn't open file: $!";
+    binmode FILE;
+    $description = <FILE>;
+    close FILE;
+  }
+
   my $analysis_xml = <<END;
   <ANALYSIS_SET xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/sra/doc/SRA_1-5/SRA.analysis.xsd?view=co">
     <ANALYSIS center_name="$center_name" analysis_center="$analysis_center" analysis_date="$datetime">
@@ -567,8 +593,16 @@ END
 END
 
 # TODO: Sheldon, these need to come from a template instead
+# LEFT OFF HERE
+    if ($pipeline_json_file ne "" && -e $pipeline_json_file) {
+      local $/ = undef;
+      open FILE, "<$pipeline_json_file" or die "Couldn't open file: $!";
+      binmode FILE;
+      my $json = <FILE>;
+      close FILE;
 
-    $analysis_xml .= <<END;
+    } else {
+      $analysis_xml .= <<END;
                   <PIPE_SECTION section_name="ContaminationAnalysis">
                     <STEP_INDEX>1</STEP_INDEX>
                     <PREV_STEP_INDEX>NIL</PREV_STEP_INDEX>
@@ -577,26 +611,7 @@ END
                     <NOTES></NOTES>
                   </PIPE_SECTION>
 END
-
-    $analysis_xml .= <<END;
-                  <PIPE_SECTION section_name="MuTect">
-                    <STEP_INDEX>2</STEP_INDEX>
-                    <PREV_STEP_INDEX>1</PREV_STEP_INDEX>
-                    <PROGRAM>muTect</PROGRAM>
-                    <VERSION>1.1.6</VERSION>
-                    <NOTES></NOTES>
-                  </PIPE_SECTION>
-END
-
-    $analysis_xml .= <<END;
-                  <PIPE_SECTION section_name="IndelGenotyper">
-                    <STEP_INDEX>3</STEP_INDEX>
-                    <PREV_STEP_INDEX>2</PREV_STEP_INDEX>
-                    <PROGRAM>GenomeAnalysisTK</PROGRAM>
-                    <VERSION>53.5759</VERSION>
-                    <NOTES></NOTES>
-                  </PIPE_SECTION>
-END
+    }
 
   $analysis_xml .= <<END;
             </PIPELINE>
