@@ -110,7 +110,7 @@ GetOptions(
      "description-file=s" => \$description_file,
      "study-refname-override=s" => \$study_ref_name,
      "analysis-center-override=s" => \$analysis_center,
-     "pipeline-json=s" => \$pipeline_json,
+     "pipeline-json=s" => \$pipeline_json_file,
      "qc-json=s" => \$qc_json_file,
      "timing-json=s" => \$timing_json_file,
      "make-runxml" => \$make_runxml,
