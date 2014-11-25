@@ -18,7 +18,15 @@ use Data::UUID;
 use XML::LibXML;
 use Time::Piece;
 
+use Config;
+$Config{useithreads} or die('Recompile Perl with threads to run this program.');
+use threads 'exit' => 'threads_only';
+use Storable 'dclone';
+
 use Data::Dumper;
+
+my $milliseconds_in_an_hour = 3600000;
+
 #############################################################################################
 # DESCRIPTION                                                                               #
 #############################################################################################
@@ -33,6 +41,13 @@ use Data::Dumper;
 #############
 # VARIABLES #
 #############
+
+# seconds to wait for a retry
+my $cooldown = 60;
+# 30 retries at 60 seconds each is 30 hours
+my $retries = 30;
+# retries for md5sum, 4 hours
+my $md5_retries = 240;
 
 my $vcfs;
 my $vcf_types;
@@ -198,7 +213,7 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
 #run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf.gz && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.gz.idx");
     }
     else {
-        # symlink for bam and md5sum file
+        # symlink for vcf and md5sum file
         run(
 "ln -s `pwd`/$vcf_arr[$i] $output_dir/ && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/"
         );
@@ -369,7 +384,7 @@ sub validate_submission {
 sub upload_submission {
     my ($sub_path) = @_;
 
-    my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
+    my $cmd = "cgsubmit -s $upload_url -o metadata_upload.$vcf_check.log -u $sub_path -vv -c $key";
     print "UPLOADING METADATA: $cmd\n";
     if ( not $test && not $skip_upload ) {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
@@ -388,7 +403,7 @@ sub upload_submission {
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
-    run("date +\%s > $final_touch_file");
+    run("date +\%s > $final_touch_file", "metadata_upload.$vcf_check.log");
 
     return 1;
 }
@@ -1240,6 +1255,69 @@ sub run {
         croak "ERROR: CMD '$cmd' returned non-zero status";
     }
     return ($result);
+}
+
+sub run_upload {
+    my ($command, $metadata_file) = @_;
+
+    say "CMD: $command";
+
+    my $thr = threads->create(\&launch_and_monitor, $command);
+    my $count = 1;
+    while(1) {
+        sleep $cooldown;
+        if (not $thr->is_running()) {
+            if ((-e $metadata_file) and (`cat $metadata_file` =~ /OK/)) {
+                say "Total number of attempts: $count";
+                say 'DONE';
+                $thr->join() if ($thr->is_running());
+                exit;
+            }
+            else {
+                $count++;
+                if ($count <= $retries ) {
+                    say 'KILLING THE THREAD!!';
+                    # kill and wait to exit
+                    $thr->kill('KILL')->join();
+                    $thr = threads->create(\&launch_and_monitor, $command);
+                    sleep $md5_retries;
+                }
+                else {
+                   exit 1;
+                }
+            }
+        }
+    }
+}
+
+sub launch_and_monitor {
+    my ($cmd) = @_;
+
+    my $my_object = threads->self;
+    my $my_tid = $my_object->tid;
+
+    local $SIG{KILL} = sub { say "GOT KILL FOR THREAD: $my_tid";
+                             threads->exit;
+                           };
+    # system doesn't work, can't kill it but the open below does allow the sub-process to be killed
+    #system($cmd);
+    my $pid = open my $in, '-|', "$cmd 2>&1" or die "Can't open command\n";
+    
+    my $milliseconds_in_an_hour = 3600000;
+    my $time_last_uploading = time;
+    my $last_reported_uploaded = 0;
+    my $count = 0;
+    while(<$in>) {
+        my ($uploaded, $percent, $rate) = $_ =~ m/^Status:\s+(\d+.\d+|\d+| )\s+[M|G]B\suploaded\s*\((\d+.\d+|\d+| )%\s*complete\)\s*current\s*rate:\s*(\d+.\d+|\d+| )\s*[M|k]B\/s/g;
+        if ($uploaded > $last_reported_uploaded) {
+            $time_last_uploading = time;
+        }
+        elsif ( (time - $time_last_uploading) > $milliseconds_in_an_hour) {
+            say 'Killing Thread - Timed Out';
+            exit;
+        }
+        $last_reported_uploaded = $uploaded;
+    }
 }
 
 0;
