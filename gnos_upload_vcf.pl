@@ -8,6 +8,7 @@ use autodie;
 use IPC::System::Simple qw(system);
 
 use Carp::Always;
+use Carp qw( croak );
 
 use Getopt::Long;
 use XML::DOM;
@@ -384,7 +385,7 @@ sub validate_submission {
 sub upload_submission {
     my ($sub_path) = @_;
 
-    my $cmd = "cgsubmit -s $upload_url -o metadata_upload.$vcf_check.log -u $sub_path -vv -c $key";
+    my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
     print "UPLOADING METADATA: $cmd\n";
     if ( not $test && not $skip_upload ) {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
@@ -403,7 +404,7 @@ sub upload_submission {
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
-    run("date +\%s > $final_touch_file", "metadata_upload.$vcf_check.log");
+    run("date +\%s > $final_touch_file", "metadata_upload.log");
 
     return 1;
 }
@@ -997,9 +998,10 @@ END
 
 sub read_header {
     my ($header) = @_;
+
     my $hd = {};
-    open my $header, '<', $header;
-    while (<$header>) {
+    open my $header_fh, '<', $header;
+    while (<$header_fh>) {
         chomp;
         my @a    = split /\t+/;
         my $type = $a[0];
@@ -1011,8 +1013,9 @@ sub read_header {
             }
         }
     }
-    close $header;
-    return ($hd);
+    close $header_fh;
+
+    return $hd;
 }
 
 sub download_metadata {
