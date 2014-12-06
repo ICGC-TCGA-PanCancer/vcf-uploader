@@ -8,6 +8,7 @@ use autodie;
 use IPC::System::Simple qw(system);
 
 use Carp::Always;
+use Carp qw( croak );
 
 use Getopt::Long;
 use XML::DOM;
@@ -18,7 +19,11 @@ use Data::UUID;
 use XML::LibXML;
 use Time::Piece;
 
+use GNOS::Upload;
 use Data::Dumper;
+
+my $milliseconds_in_an_hour = 3600000;
+
 #############################################################################################
 # DESCRIPTION                                                                               #
 #############################################################################################
@@ -33,6 +38,13 @@ use Data::Dumper;
 #############
 # VARIABLES #
 #############
+
+# seconds to wait for a retry
+my $cooldown = 60;
+# 30 retries at 60 seconds each is 30 hours
+my $retries = 30;
+# retries for md5sum, 4 hours
+my $md5_sleep = 240;
 
 my $vcfs;
 my $vcf_types;
@@ -143,13 +155,31 @@ GetOptions(
 ##############
 
 # setup output dir
-print "SETTING UP OUTPUT DIR\n";
-my $ug   = Data::UUID->new;
-my $uuid = lc( $ug->create_str() );
+say "SETTING UP OUTPUT DIR";
 
+my $uuid = '';
+my $ug = Data::UUID->new;
+
+if(-d "$output_dir") {
+    opendir( my $dh, $output_dir);
+    my @dirs = grep {-d "$output_dir/$_" && ! /^\.{1,2}$/} readdir($dh);
+    if (scalar @dirs == 1) {
+        $uuid = $dirs[0];
+    }
+    else {
+        $uuid = lc($ug->create_str());
+    }
+}
+else {
+    $uuid = lc($ug->create_str());
+}
+
+$output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir/$uuid");
-$output_dir = $output_dir . "/$uuid/";
+$output_dir = "$output_dir/$uuid/";
 my $final_touch_file = "$output_dir/upload_complete.txt";
+
+
 
 # parse values
 my @vcf_arr          = split /,/, $vcfs;
@@ -165,46 +195,35 @@ my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 
 # TODO: Sheldon, we'll need more validation here, check each VCF file for headers etc. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 say 'VALIDATING PARAMS';
-if ( scalar(@vcf_arr) != scalar(@md5_file_arr) ) {
-    die "VCF and VCF md5sum file count don't match!\n";
-}
-if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) ) {
-    die "VCF and VCF index count don't match!\n";
-}
-if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) ) {
-    die "VCF index and VCF index md5sum count don't match!\n";
-}
-if ( scalar(@tarball_arr) != scalar(@md5_tarball_file_arr) ) {
-    die "Tarball and Tarball md5sum count don't match!\n";
-}
 
-print "COPYING FILES TO OUTPUT DIR\n";
+die "VCF and VCF md5sum file count don't match!\n"        if ( scalar(@vcf_arr) != scalar(@md5_file_arr) );
+die "VCF and VCF index count don't match!\n"              if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) );
+die "VCF index and VCF index md5sum count don't match!\n" if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) );
+die "Tarball and Tarball md5sum count don't match!\n"     if ( scalar(@tarball_arr) != scalar(@md5_tarball_file_arr) );
+
+
+say 'COPYING FILES TO OUTPUT DIR';
+
+
+my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
+my $pwd = `pwd`;
+chomp $pwd;
+
+
 for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     my $vcf_check = `cat $md5_file_arr[$i]`;
-    print "CAT CODE! cat $md5_file_arr[$i]\n";
+    say "CAT CODE! cat $md5_file_arr[$i]";
     my $idx_check = `cat $md5_idx_file_arr[$i]`;
     chomp $vcf_check;
     chomp $idx_check;
     push @vcf_checksums, $vcf_check;
     push @idx_checksums, $idx_check;
-    if ($force_copy) {
 
-        # rsync to destination
-        run(
-"rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_file_arr[$i] $output_dir/ && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/ && rsync -rauv `pwd`/$md5_idx_file_arr[$i] $output_dir/"
-        );
+    my @files = ($vcf_arr[$i], $md5_file_arr[$i], $vcfs_idx_arr[$i], $md5_idx_file_arr[$i]); 
 
-# INFO: I was thinking about renaming files but I think it's safer to not do this
-#run("rsync -rauv `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf.gz && rsync -rauv `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.gz.idx");
-    }
-    else {
-        # symlink for bam and md5sum file
-        run(
-"ln -s `pwd`/$vcf_arr[$i] $output_dir/ && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/"
-        );
-
-# INFO
-#run("ln -s `pwd`/$vcf_arr[$i] $output_dir/$vcf_check.vcf.gz && ln -s `pwd`/$vcfs_idx_arr[$i] $output_dir/$idx_check.vcf.gz.idx");
+    foreach my $file (@files) {
+        my $command = "$link_method $pwd/$file $output_dir/";
+        run($command) if (not (-e "$pwd/$output_dir/$file"));
     }
 }
 
@@ -212,37 +231,24 @@ for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
     my $tarball_check = `cat $md5_tarball_file_arr[$i]`;
     chomp $tarball_check;
     push @tarball_checksums, $tarball_check;
-    if ($force_copy) {
-        run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/");
-
-   #run("rsync -rauv `pwd`/$tarball_arr[$i] $output_dir/$tarball_check.tar.gz");
-    }
-    else {
-        run("ln -s `pwd`/$tarball_arr[$i] $output_dir/");
-
-        #run("ln -s `pwd`/$tarball_arr[$i] $output_dir/$tarball_check.tar.gz");
-    }
+    run("$link_method $pwd/$tarball_arr[$i] $output_dir/");
 }
 
-print "DOWNLOADING METADATA FILES\n";
+say 'DOWNLOADING METADATA FILES';
 my $metad            = download_metadata($metadata_url);
 my $input_json_hash  = generate_input_json($metad);
 my $output_json_hash = generate_output_json($metad);
 
-print "GENERATING SUBMISSION\n";
-my $sub_path =
-  generate_submission( $metad, $input_json_hash, $output_json_hash );
+say 'GENERATING SUBMISSION';
+my $sub_path = generate_submission( $metad, $input_json_hash, $output_json_hash );
 
-print "VALIDATING SUBMISSION\n";
-if ( validate_submission($sub_path) ) {
-    die
-"The submission did not pass validation! Files are located at: $sub_path\n";
-}
+say 'VALIDATING SUBMISSION';
+die "The submission did not pass validation! Files are located at: $sub_path\n"
+                                                       if ( validate_submission($sub_path) );
 
-print "UPLOADING SUBMISSION\n";
-if ( upload_submission($sub_path) ) {
-    die "The upload of files did not work!  Files are located at: $sub_path\n";
-}
+say 'UPLOADING SUBMISSION';
+die "The upload of files did not work!  Files are located at: $sub_path\n" 
+                                                       if ( upload_submission($sub_path) );
 
 ###############
 # SUBROUTINES #
@@ -256,7 +262,7 @@ sub generate_input_json {
 
 # cleanup and pull out the info I want, key off of specimen ID e.g. the SM field in the BAM header aka the aliquot_id in SRA XML
     foreach my $url ( keys %{$metad} ) {
-        print "URL: $url\n";
+        say "URL: $url";
 
         # pull back the target sample UUID
         my $target = $metad->{$url}{'target'}[0]{'refname'};
@@ -267,19 +273,18 @@ sub generate_input_json {
         $r->{'attributes'}{'center_name'}  = $metad->{$url}{'center_name'};
         $r->{'attributes'}{'analysis_id'}  = $metad->{$url}{'analysis_id'};
         $r->{'attributes'}{'analysis_url'} = $url;
-        $r->{'attributes'}{'study_ref'} =
-          $metad->{$url}{'study_ref'}[0]{'refname'};
-        $r->{'attributes'}{'dcc_project_code'} = join( ",",
+        $r->{'attributes'}{'study_ref'} = $metad->{$url}{'study_ref'}[0]{'refname'};
+        $r->{'attributes'}{'dcc_project_code'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'dcc_project_code'} } );
-        $r->{'attributes'}{'submitter_donor_id'} = join( ",",
+        $r->{'attributes'}{'submitter_donor_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_donor_id'} } );
-        $r->{'attributes'}{'submitter_sample_id'} = join( ",",
+        $r->{'attributes'}{'submitter_sample_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_sample_id'} } );
-        $r->{'attributes'}{'dcc_specimen_type'} = join( ",",
+        $r->{'attributes'}{'dcc_specimen_type'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'dcc_specimen_type'} } );
         $r->{'attributes'}{'use_cntl'} =
           join( ",", keys %{ $metad->{$url}{'analysis_attr'}{'use_cntl'} } );
-        $r->{'attributes'}{'submitter_specimen_id'} = join( ",",
+        $r->{'attributes'}{'submitter_specimen_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_specimen_id'} }
         );
 
@@ -296,7 +301,7 @@ sub generate_output_json {
 
 # cleanup and pull out the info I want, key off of specimen ID e.g. the SM field in the BAM header aka the aliquot_id in SRA XML
     foreach my $url ( keys %{$metad} ) {
-        print "URL: $url\n";
+        say "URL: $url";
 
         # pull back the target sample UUID
         my $target = $metad->{$url}{'target'}[0]{'refname'};
@@ -309,17 +314,17 @@ sub generate_output_json {
         $r->{'attributes'}{'analysis_url'} = $url;
         $r->{'attributes'}{'study_ref'} =
           $metad->{$url}{'study_ref'}[0]{'refname'};
-        $r->{'attributes'}{'dcc_project_code'} = join( ",",
+        $r->{'attributes'}{'dcc_project_code'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'dcc_project_code'} } );
-        $r->{'attributes'}{'submitter_donor_id'} = join( ",",
+        $r->{'attributes'}{'submitter_donor_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_donor_id'} } );
-        $r->{'attributes'}{'submitter_sample_id'} = join( ",",
+        $r->{'attributes'}{'submitter_sample_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_sample_id'} } );
-        $r->{'attributes'}{'dcc_specimen_type'} = join( ",",
+        $r->{'attributes'}{'dcc_specimen_type'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'dcc_specimen_type'} } );
         $r->{'attributes'}{'use_cntl'} =
           join( ",", keys %{ $metad->{$url}{'analysis_attr'}{'use_cntl'} } );
-        $r->{'attributes'}{'submitter_specimen_id'} = join( ",",
+        $r->{'attributes'}{'submitter_specimen_id'} = join( ',',
             keys %{ $metad->{$url}{'analysis_attr'}{'submitter_specimen_id'} }
         );
 
@@ -355,13 +360,11 @@ sub process_files {
 
 sub validate_submission {
     my ( $sub_path, $vcf_check ) = @_;
-    my $cmd =
-"cgsubmit --validate-only -s $upload_url -o validation.log -u $sub_path -vv";
-    print "VALIDATING: $cmd\n";
-    if ( !$skip_validate ) {
-        if ( system("which cgsubmit") ) {
-            die "ABORT: No cgsubmit installed, aborting!";
-        }
+
+    my $cmd = "cgsubmit --validate-only -s $upload_url -o validation.log -u $sub_path -vv";
+    say "VALIDATING: $cmd";
+    unless ( $skip_validate ) {
+        die "ABORT: No cgsubmit installed, aborting!" if ( system("which cgsubmit") );
         return run($cmd);
     }
 }
@@ -370,7 +373,7 @@ sub upload_submission {
     my ($sub_path) = @_;
 
     my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
-    print "UPLOADING METADATA: $cmd\n";
+    say "UPLOADING METADATA: $cmd";
     if ( not $test && not $skip_upload ) {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
         return 1 if ( run($cmd) );
@@ -379,16 +382,17 @@ sub upload_submission {
 # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test);
 
-    $cmd = "cd $sub_path; gtupload -v -c $key -u ./manifest.xml; cd -";
+    my $log_file = 'upload.log';
+    my $gt_upload_command = "cd $sub_path; gtupload -v -c $key -l ./$log_file -u ./manifest.xml; cd -";
     say "UPLOADING DATA: $cmd";
 
-    if ( not $test ) {
+    unless ( $test ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        return 1 if ( run($cmd) );
+        return 1 if ( GNOS::Upload->upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
-    run("date +\%s > $final_touch_file");
+    run("date +\%s > $final_touch_file", "metadata_upload.log");
 
     return 1;
 }
@@ -467,8 +471,6 @@ sub generate_submission {
     # aliquot_id|library_id|platform_unit|read_group_id|input_url
     my $global_attr = {};
 
-    #print Dumper($m);
-
     # input info
     my $pi2 = {};
 
@@ -523,8 +525,6 @@ sub generate_submission {
         foreach my $bam_info ( @{ $m->{$file}{'run'} } ) {
             if ( $bam_info->{data_block_name} ne '' ) {
 
-                #print Dumper($bam_info);
-                #print Dumper($m->{$file}{'file'}[$index]);
                 my $pi = {};
                 $pi->{'input_info'}{'donor_id'}              = $participant_id;
                 $pi->{'input_info'}{'specimen_id'}           = $sample_id;
@@ -553,8 +553,6 @@ sub generate_submission {
     my $str = to_json($pi2);
     $global_attr->{"pipeline_input_info"}{$str} = 1;
 
-    # print Dumper($global_attr);
-
     my $description =
 "This is the variant calling for specimen $sample_id from donor $participant_id. The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the $workflow_name workflow, version $workflow_version available at $workflow_url. This workflow can be created from source, see $workflow_src_url. For a complete change log see $changelog_url. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference.";
 
@@ -582,10 +580,8 @@ END
     foreach my $url ( keys %{$m} ) {
         foreach my $run ( @{ $m->{$url}{'run'} } ) {
 
-            #print Dumper($run);
             if ( defined( $run->{'read_group_label'} ) ) {
 
-                #print "READ GROUP LABREL: ".$run->{'read_group_label'}."\n";
                 my $dbn = $run->{'data_block_name'};
                 my $rgl = $run->{'read_group_label'};
                 my $rn  = $run->{'refname'};
@@ -982,9 +978,10 @@ END
 
 sub read_header {
     my ($header) = @_;
+
     my $hd = {};
-    open my $header, '<', $header;
-    while (<$header>) {
+    open my $header_fh, '<', $header;
+    while (<$header_fh>) {
         chomp;
         my @a    = split /\t+/;
         my $type = $a[0];
@@ -996,8 +993,9 @@ sub read_header {
             }
         }
     }
-    close $header;
-    return ($hd);
+    close $header_fh;
+
+    return $hd;
 }
 
 sub download_metadata {
@@ -1070,7 +1068,6 @@ sub download_url {
 sub getVal {
     my ( $node, $key ) = @_;
 
-    #print "NODE: $node KEY: $key\n";
     if ( $node != undef ) {
         if ( defined( $node->getElementsByTagName($key) ) ) {
             if ( defined( $node->getElementsByTagName($key)->item(0) ) ) {
@@ -1148,7 +1145,6 @@ sub getValsMulti {
 sub getVals {
     my ( $node, $key, $tag ) = @_;
 
-    #print "NODE: $node KEY: $key\n";
     my @r;
     if ( $node != undef ) {
         if ( defined( $node->getElementsByTagName($key) ) ) {
@@ -1219,6 +1215,7 @@ sub read_timing {
 # TODO
 sub getQcResult {
     my $ret;
+
     if ( defined $qc_json_file && -e $qc_json_file ) {
         open my $qc_fh, '<', $qc_json_file;
         my $json = <$qc_fh>;
@@ -1229,16 +1226,19 @@ sub getQcResult {
         my $object = { "qc_metrics" => {} };
         $ret = to_json $object;
     }
+
     return $ret;
 }
 
 sub run {
     my ( $cmd, $do_die ) = @_;
-    print "CMD: $cmd\n";
+
+    say "CMD: $cmd";
     my $result = system($cmd);
     if ( $do_die && $result ) {
         croak "ERROR: CMD '$cmd' returned non-zero status";
     }
+
     return ($result);
 }
 
