@@ -162,6 +162,26 @@ The format of the Pipe JSON for that section of the XML:
       ]
     }
 
+## Notes About GNOS Analysis XML
+
+The tool encodes various metadata in an analysis.xml for uploading to GNOS.  Here's some additional information about what is populated in some key fields that folks on the project have asked about.
+
+    <ANALYSIS center_name="UCSC" analysis_center="OICR" analysis_date="2014-12-04T20:11:46”>
+
+In this element, center_name is carried over from the input XML (no mechanism to override in workflow/VCF uploader).
+
+analysis_center defaults to OICR but can be overridden by a parameter to the workflow/VCF uploader.
+
+    <STUDY_REF refcenter="TCGA" refname="tcga_pancancer_vcf_test”/>
+
+refcenter is carried over from the input XML (no mechanism to override in workflow/VCF uploader).
+
+refname defaults to “icgc_pancancer_vcf” but can be overridden by a parameter to the workflow/VCF uploader.
+
+### Values for the Core 60 Donors
+
+For the TCGA samples (which are most of the 60) this should be “tcga_pancancer_vcf_test”.  For the ICGC samples its “icgc_pancancer_vcf_test”.  Given the churn that happened last time with the alignment workflow I think it makes sense to keep the 60 in the “test” studies and switch over to the real one once the full set of donors are running.
+
 ## To Do
 
 * removed hard coded XML files and replace with Template Toolkit templates (or something similar)
