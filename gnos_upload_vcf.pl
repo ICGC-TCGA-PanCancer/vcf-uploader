@@ -388,7 +388,7 @@ sub upload_submission {
 
     unless ( $test ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        return 1 if ( GNOS::Upload->upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
+        return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
