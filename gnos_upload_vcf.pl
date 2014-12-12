@@ -177,7 +177,7 @@ else {
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir/$uuid");
 $output_dir = "$output_dir/$uuid/";
-my $final_touch_file = "$output_dir/upload_complete.txt";
+my $final_touch_file = $output_dir."upload_complete.txt";
 
 
 
