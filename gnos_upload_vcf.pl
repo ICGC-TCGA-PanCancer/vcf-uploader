@@ -177,7 +177,7 @@ else {
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir/$uuid");
 $output_dir = "$output_dir/$uuid/";
-my $final_touch_file = "$output_dir/upload_complete.txt";
+my $final_touch_file = $output_dir."upload_complete.txt";
 
 
 
@@ -219,7 +219,7 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     push @vcf_checksums, $vcf_check;
     push @idx_checksums, $idx_check;
 
-    my @files = ($vcf_arr[$i], $md5_file_arr[$i], $vcfs_idx_arr[$i], $md5_idx_file_arr[$i]); 
+    my @files = ($vcf_arr[$i], $md5_file_arr[$i], $vcfs_idx_arr[$i], $md5_idx_file_arr[$i]);
 
     foreach my $file (@files) {
         my $command = "$link_method $pwd/$file $output_dir/";
@@ -247,7 +247,7 @@ die "The submission did not pass validation! Files are located at: $sub_path\n"
                                                        if ( validate_submission($sub_path) );
 
 say 'UPLOADING SUBMISSION';
-die "The upload of files did not work!  Files are located at: $sub_path\n" 
+die "The upload of files did not work!  Files are located at: $sub_path\n"
                                                        if ( upload_submission($sub_path) );
 
 ###############
@@ -369,6 +369,7 @@ sub validate_submission {
     }
 }
 
+# TODO: need to standardize on the return values... 1 or 0!!
 sub upload_submission {
     my ($sub_path) = @_;
 
@@ -379,7 +380,7 @@ sub upload_submission {
         return 1 if ( run($cmd) );
     }
 
-# we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
+    # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test);
 
     my $log_file = 'upload.log';
@@ -388,13 +389,13 @@ sub upload_submission {
 
     unless ( $test ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        return 1 if ( GNOS::Upload->upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
+        return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
     run("date +\%s > $final_touch_file", "metadata_upload.log");
 
-    return 1;
+    return 0;
 }
 
 sub modify_manifest_file {
