@@ -19,29 +19,34 @@ use GNOS::Download;
 # sudo apt-get install libcommon-sense-perl
 # PURPOSE:
 # the program takes a command (use single quotes to encapsulate it in bash) and
-# a comma-delimited list of files to check. It also takes a retries count and
-# cooldown time in seconds. It then executes the command in a thread and
-# watches the files every cooldown time. For every period where there is no
-# change in the output file sizes (one or more) then the retries count is
-# decremented. If there is a change then the retries count is reset the and
-# process starts over. If the retries are exhausted the thread is killed, the
+# a to check, the existance of which indidates the gtdownload finished running.
+# It also takes a retries count, timeout for no data being written in minutes, and a
+# cooldown (sleep) time in minutes for checking if the output exists. It then executes the command in a thread and
+# watches the files every sleep time. For every timeout period where there is no
+# change in the output file size then the retries count is
+# decremented. By default, the retries are 30 and timeout 60 minutes so the code
+# could retry a download that times out a total of 30 hours before giving up.
+# If the retries are exhausted the thread is killed, the
 # thread is recreated and started, and the process starts over.
 
 # where file is the GNOS id of the file
 
 my ($command, $file);
-my $cooldown = 60;
-my $md5_sleep = 240;
+my $cooldown_min = 1;
+my $timeout_min = 60;
 my $retries = 30;
 
 GetOptions (
 "command=s" => \$command,
-"file-grep=s" => \$file,
+"file=s" => \$file,
 "retries=i" => \$retries,
-"sleep=i" => \$cooldown,
-"md5-retries=i" => \$md5_sleep
+"sleep-min=i" => \$cooldown_min,
+"timeout-min=i" => \$timeout_min,
 );
 
 say "FILE: $file";
 
-GNOS::Download->run_download($command, $file, $retries, $cooldown, $md5_sleep);
+# will return 0 on success, not 0 on failure
+my $ret_val = GNOS::Download->run_download($command, $file, $retries, $cooldown_min, $timeout_min);
+
+exit ($ret_val);
