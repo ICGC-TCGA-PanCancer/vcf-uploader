@@ -1,0 +1,62 @@
+import argparse
+import sys
+import os
+import json
+import synapseclient
+from synapseclient import File, Activity, Wiki
+
+
+
+def build_parser():
+    """Set up argument parser and returns"""
+    parser = argparse.ArgumentParser(description='Uploads files to Synapse by using a json document for meta data.')
+    parser.add_argument('--parentId', dest='parentId', required=True, 
+                        help='Id for Folder where to store files (example DKFZ: syn2898426, Sanger: syn2897245)')
+    parser.add_argument('json_file', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
+                        help='json file with parameters (optionally read from stdin')
+    return parser
+
+    
+
+
+if __name__ == '__main__':
+    args = build_parser().parse_args()
+    params = json.load(args.json_file)
+
+    ##Login into Synapse if you have not logged in before you can use (to cache your credentials) 
+    #  syn.login('username', 'secret_password', rememberMe=True)
+    syn = synapseclient.login()
+    
+
+    ##Build up provenance and store to Synapse
+    provenance = Activity(name = params['annotations']['workflow_name'],
+                          description='Variant calling for indels, SNVs, and copy numbers.',
+                          used = params['used_urls'],
+                          executed = params['executed_urls'])
+
+    #Step through list of files and store in Synapse
+    for path in params['files']:
+        f = File(path, parentId=args.parentId)
+        #Set annotations
+        f.annotations = params['annotations']
+
+        #Add file specific annotations
+        filename = os.path.split(path)[-1]
+        sample_id, pipeline_version, date, call_type, dataType  =  filename.split('.')[:5]
+        fileType =  [i for i in filename.split('.')[5:] if i != 'gz'][-1]
+        file_md5 = synapseclient.utils.md5_for_file(path)
+        f.sample_id = sample_id
+        f.pipeline_version = pipeline_version
+        f.date = date
+        f.call_type = call_type
+        f.dataType = dataType
+        f.fileType = fileType
+        f.file_md5 = file_md5
+
+        #Persist up to Synapse
+        f = syn.store(f)
+        provenance = syn.setProvenance(f, provenance)
+
+        #Add Description
+        wiki = Wiki(title = params['wiki_content']['title'], owner=f, markdown=params['wiki_content']['description'])
+        wiki = syn.store(wiki)
