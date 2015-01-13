@@ -1,7 +1,10 @@
-{"files" : ["sample-level_vcf_file_path_comma_sep_if_multiple", 
-	    "sample-level_vcf_idx_file_path_comma_sep_if_multiple",
-	    "tar.gz_non-vcf_files_comma_sep_if_multiple"],
- "annotations" :{"sample_id": "7d7205e8-d864-11e3-be46-bd5eb93a18bb",
+{"files" : ["sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.tar.gz",
+	    "sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz",
+	    "sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz.idx",
+	    "sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.tar.gz",
+	    "sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz",
+	    "sample_files/914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.idx"],
+ "annotations" :{"sample_id": "914ee592-e855-43d3-8767-a96eb6d1f067",
 		 "donor_id": "05506f4c-e701-4a9d-ae06-97f066aade43",
 		 "alignment_workflow_name": "Workflow_Bundle_BWA (UCSC Implementation)",
 		 "alignment_workflow_version": "2.6.0",
@@ -21,7 +24,7 @@
  "used_urls": ["https://gtrepo-dkfz.annailabs.com/cghub/data/analysis/download/.../comma_list_of_aligned_bam_files",
 		"ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz/.../or_other_correct_url"],
  "executed_urls":  ["https://github.com/SeqWare/public-workflows/tree/vcf-1.1.0/workflow-DKFZ-bundle",
-		    "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_BWA_2.6.0_SeqWare_1.0.15.zip/.../Point/to_Correct/URL"]
+		    "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_BWA_2.6.0_SeqWare_1.0.15.zip/.../Point/to_Correct/URL"],
  "wiki_content": {"title" : "TCGA/ICGC PanCancer Donor-Level Variant Calling for Participant 05506f4c-e701-4a9d-ae06-97f066aade4",
-		  "description" : "This is the variant calling for specimen 669a4076-13de-42dc-895c-85d040422042 from donor 05506f4c-e701-4a9d-ae06-97f066aade43 . The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the SangerPancancerCgpCnIndelSnvStr workflow, version 1.0.1 available at https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_SangerPancancerCgpCnIndelSnvStr_1.0.1_SeqWare_1.1.0-alpha.5.zip. This workflow can be created from source, see https://github.com/ICGC-TCGA-PanCancer/SeqWare-CGP-SomaticCore. For a complete change log see https://github.com/testproject/workflow-test-cancer/blob/1.0.0/workflow-test-cancer/CHANGELOG.md. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference."},
+		  "description" : "This is the variant calling for specimen 669a4076-13de-42dc-895c-85d040422042 from donor 05506f4c-e701-4a9d-ae06-97f066aade43 . The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the SangerPancancerCgpCnIndelSnvStr workflow, version 1.0.1 available at https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_SangerPancancerCgpCnIndelSnvStr_1.0.1_SeqWare_1.1.0-alpha.5.zip. This workflow can be created from source, see https://github.com/ICGC-TCGA-PanCancer/SeqWare-CGP-SomaticCore. For a complete change log see https://github.com/testproject/workflow-test-cancer/blob/1.0.0/workflow-test-cancer/CHANGELOG.md. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference."}
 }
