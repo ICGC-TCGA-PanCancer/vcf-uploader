@@ -53,7 +53,7 @@ GetOptions(
     "output_dir=s"     => \$output_dir
     );
 
-$metadata_url or die "Usage: synapse_upload_vcf.pl --metadata-url url [--force-copy]\n"; 
+$metadata_url or die "Usage: synapse_upload_vcf.pl --metadata-url url [--force-copy] [--output_dir dir]\n"; 
 
 ##############
 # MAIN STEPS #
@@ -77,12 +77,13 @@ my $pwd = `pwd`;
 chomp $pwd;
 
 for my $url (@metadata_urls) {
+    say $url;
     my $metad = download_metadata($metadata_url);
     my $json  = generate_output_json($metad);
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
-    open JFILE, ">$output_dir/$analysis_id.json";
-    print JFILE $json;
-    close JFILE;
+#    open JFILE, ">$output_dir/$analysis_id.json";
+#    print JFILE $json;
+#    close JFILE;
     say "JSON saved as $output_dir/$analysis_id.json";
 }
 
@@ -104,16 +105,42 @@ sub get_sample_ids {
 }
 
 
+# We will neeed to grab the files from GNOS assuming synpase upload is
+# not concurrent with GNOS upload
+sub download_vcf_files {
+    my $metad = shift;
+    my $url   = shift;
+    my @data  = get_files($metad,$url);
+    for my $file (@data) {
+	my ($name,$checksum) = @$file;
+	my $file_name = "$output_dir/$name";
+	say "This is where I will be downloading $file_name!";
+	# and add the logic to download
+    }
+}
+
+sub get_files {
+    my $metad = shift;
+    my $url   = shift;
+    my $file_data = $metad->{$url}->{file};
+    my @file_data = map {[$_->{filename},$_->{checksum}]} @$file_data;
+    return @file_data;
+}
+
+sub get_file_names {
+    my $metad = shift;
+    my $url   = shift;
+    my @data  = get_files($metad,$url);
+    my @names = map {$_->[0]} @data;
+    return [map{"$output_dir/$_"} @names];
+}
+
 sub generate_output_json {
     my ($metad) = @_;
     my $data = {};
 
     foreach my $url ( keys %{$metad} ) {
-	my @files = map {"$output_dir/$_"} 
-                    sort 
-		    map {$_->{filename}} @{$metad->{$url}->{file}};
-	
-	$data->{files} = \@files;
+	$data->{files} = get_file_names($metad,$url);
 
 	my $atts = $metad->{$url}->{analysis_attr};
 	my $anno = $data->{annotations} = {};
@@ -137,7 +164,7 @@ sub generate_output_json {
         $anno->{original_analysis_id}         = [keys %{$atts->{original_analysis_id}}];
 
 	# harder to get attributes
-	$anno->{call_type} = (grep {/\.somatic\./} @files) ? 'somatic' : 'germline';
+	$anno->{call_type} = (grep {/\.somatic\./} @{$data->{files}}) ? 'somatic' : 'germline';
 	$anno->{sample_id} = get_sample_ids($atts);
 
 	my $wiki = $data->{wiki_content} = {};
