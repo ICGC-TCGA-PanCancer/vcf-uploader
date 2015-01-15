@@ -29,7 +29,7 @@ You can use PerlBrew (or your native package manager) to install dependencies.  
 
 Or on an Ubuntu 12.04 host you would install via:
 
-    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl
+    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl 
 
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
