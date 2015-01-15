@@ -79,6 +79,11 @@ chomp $pwd;
 for my $url (@metadata_urls) {
     my $metad = download_metadata($metadata_url);
     my $json  = generate_output_json($metad);
+    my ($analysis_id) = $url =~ m!/([^/]+)$!;
+    open JFILE, ">$output_dir/$analysis_id.json";
+    print JFILE $json;
+    close JFILE;
+    say "JSON saved as $output_dir/$analysis_id.json";
 }
 
 
