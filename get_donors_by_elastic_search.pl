@@ -21,13 +21,14 @@ my $hits = $json_obj->{hits}->{hits};
 for my $hit (@$hits) {
     my $id   = $hit->{fields}->{'variant_calling_results.sanger_variant_calling.gnos_id'}->[0];
     my $repo = $hit->{fields}->{'variant_calling_results.sanger_variant_calling.gnos_repo'}->[0];
-    my $url  = "$repo$id";
+    my $url  = join('',$repo,'cghub/metadata/analysisFull/',$id);
     say $url;
+    system "perl synapse_upload_vcf.pl --metadata-url $url";
 }
 
 
 __DATA__
-curl -s -XGET "http://pancancer.info/elasticsearch/CURRENT_INDEX/donor/_search?size=50&fields=variant_calling_results.sanger_variant_calling.gnos_repo,variant_calling_results.sanger_variant_calling.gnos_id" -d '
+curl -s -XGET "http://pancancer.info/elasticsearch/CURRENT_INDEX/donor/_search?size=1000&fields=variant_calling_results.sanger_variant_calling.gnos_repo,variant_calling_results.sanger_variant_calling.gnos_id" -d '
 {
    "query":{
       "match_all" : { }
@@ -47,6 +48,13 @@ curl -s -XGET "http://pancancer.info/elasticsearch/CURRENT_INDEX/donor/_search?s
                   ]
                }
             },
+	    {
+		 "terms":{
+                  "flags.is_train2_pilot":[
+                     "T"
+                  ]
+		 }
+	     }, 
             {
                "terms":{
                   "flags.are_all_tumor_specimens_aligned":[
