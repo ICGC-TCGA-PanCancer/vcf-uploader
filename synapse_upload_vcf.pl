@@ -109,12 +109,13 @@ sub get_sample_ids {
 # not concurrent with GNOS upload
 sub download_vcf_files {
     my $metad = shift;
-    my $url   = shift;
-    my @data  = get_files($metad,$url);
+    my $url = shift;
+    my @data = @_;
+    say "This is where I will be downloading files from GNOS";
     for my $file (@data) {
 	my ($name,$checksum) = @$file;
 	my $file_name = "$output_dir/$name";
-	say "This is where I will be downloading $file_name!";
+	my $download_url = $metad->{$url}->{download_url};
 	# and add the logic to download
     }
 }
@@ -124,6 +125,7 @@ sub get_files {
     my $url   = shift;
     my $file_data = $metad->{$url}->{file};
     my @file_data = map {[$_->{filename},$_->{checksum}]} @$file_data;
+    download_vcf_files($metad,$url,@file_data);
     return @file_data;
 }
 
@@ -211,6 +213,7 @@ sub parse_metadata {
     $m->{'description'} = getVal( $doc, 'DESCRIPTION');
     $m->{'reference_build'} = getTagAttVal( $doc, 'STANDARD', 'short_name' );
     $m->{'platform'} = getVal( $doc, 'platform');
+    $m->{'download_url'} = getVal( $doc, 'analysis_data_uri');
 
     push @{ $m->{'study_ref'} },
       getValsMulti( $doc, 'STUDY_REF', "refcenter,refname" );
