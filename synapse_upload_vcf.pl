@@ -81,7 +81,6 @@ chomp $pwd;
 my @metadata_urls;
 unless ($metadata_url) {
     say "Getting metadata URLs by elastic search...";
-    sleep 2;
     @metadata_urls = `./get_donors_by_elastic_search.pl`;
     chomp @metadata_urls;
 }
@@ -90,31 +89,88 @@ else {
 }
 
 
+# First, read in the metadata and save the workflow
+# version
 my %variant_workflow_version;
+my %to_be_processed;
 for my $url (@metadata_urls) {
     say "metadata URL=$url";
     my $metad = download_metadata($url);
 
-    # we will only grab the result for the most recent variant workflow
-
-
-    my $json  = generate_output_json($metad);
+    # save workflow version 
+    workflow_version($metad);
+   
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
-#    open JFILE, ">$output_dir/$analysis_id.json";
-#    print JFILE $json;
-#    close JFILE;
+    $to_be_processed{$analysis_id} = $metad;
+}
+
+# Then, do the upload only for the most recent version
+while (my ($analysis_id,$metad) = each %to_be_processed) {
+    next unless newest_workflow_version($metad);
+    
+    my $json  = generate_output_json($metad);
+    say $json;
+
+    open JFILE, ">$output_dir/$analysis_id.json";
+    print JFILE $json;
+    close JFILE;
+
     say "JSON saved as $output_dir/$analysis_id.json";
 }
 
+# Check to see if this donor has VCF results from a more recent
+# version of the workflow.
+sub newest_workflow_version {
+    return workflow_version(@_);
+}
+sub workflow_version {
+    my $metad = shift;
+    my ($data) = values %$metad;
+    my ($donor_id) = keys %{$data->{analysis_attr}->{submitter_donor_id}};
+    my $center     = $data->{center_name};
+    my ($workflow) =  keys %{$data->{analysis_attr}->{variant_workflow_name}};
+    my ($version)  =  keys %{$data->{analysis_attr}->{variant_workflow_version}};
+    
+    # unique donor ID
+    $donor_id = join('-',$center,$donor_id);
+    
+    # check if our workflow version is more recent
+    return is_more_recent($donor_id,$workflow,$version);
+}
 
-###############
-# SUBROUTINES #
-###############
+sub is_more_recent {
+    my $donor   = shift;
+    my $name    = shift;
+    my $version = shift;
+    my ($primary,$secondary,$tertiary) = split('\.',$version);
 
-# "used_urls": ["https://gtrepo-dkfz.annailabs.com/cghub/data/analysis/download/.../comma_list_of_aligned_bam_files",
-#                "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz/.../or_other_correct_url"],
-# "executed_urls":  ["https://github.com/SeqWare/public-workflows/tree/vcf-1.1.0/workflow-DKFZ-bundle",
-#                    "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_BWA_2.6.0_SeqWare_1.0.15.zip/.../Point/to_Correct/URL"],
+    my $wf_version = $variant_workflow_version{$donor}{$name};
+    if (not defined $wf_version) {
+	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
+	return 1;
+    }
+    elsif (
+	$primary   > $wf_version->[0]
+	||
+	($secondary > $wf_version->[1] && $primary == $wf_version->[0])
+	||
+	($tertiary  > $wf_version->[2] && $primary == $wf_version->[0] && $secondary == $wf_version->[1])
+	) {
+	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
+	return 1;
+    }
+    elsif (
+        $primary   == $wf_version->[0]
+        &&
+        $secondary == $wf_version->[1]
+        &&
+        $tertiary  == $wf_version->[2]
+	) {
+	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
+	return 1;
+    }
+    return 0;
+}
 
 # This method gets the information about the BWA alignment outputs/VCF inputs
 sub get_sample_data {
@@ -145,7 +201,7 @@ sub get_sample_data {
     }
 
     $anno->{sample_id_normal}  = $normal_sid;
-    $anno->{aalysis_id_normal} = $normal_aid;
+    $anno->{analysis_id_normal} = $normal_aid;
     $anno->{sample_id_tumor}   = $tumor_sid;
     $anno->{analysis_id_tumor} = $tumor_aid;
     $json->{used_urls} = \@urls;
@@ -228,7 +284,7 @@ sub generate_output_json {
 
 
     my $json = JSON->new->pretty->encode( $data);
-    say $json;
+    #say $json;
     return $json;
 }
 
