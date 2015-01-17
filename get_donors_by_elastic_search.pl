@@ -24,6 +24,7 @@ for my $hit (@$hits) {
     my $url  = join('',$repo,'cghub/metadata/analysisFull/',$id);
     say $url;
     system "perl synapse_upload_vcf.pl --metadata-url $url";
+    last;
 }
 
 
