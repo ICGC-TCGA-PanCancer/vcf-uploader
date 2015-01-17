@@ -14,10 +14,6 @@ use XML::XPath;
 use XML::XPath::XMLParser;
 use JSON;
 
-#use XML::LibXML;
-#use Time::Piece;
-
-use GNOS::Upload;
 use Data::Dumper;
 
 my $milliseconds_in_an_hour = 3600000;
@@ -29,49 +25,53 @@ my $milliseconds_in_an_hour = 3600000;
 #############################################################################################
 
 
+
+# Edit as required!
+use constant cooldown     => 60;
+use constant retries      => 30;
+use constant md5_sleep    => 240;
+
+use constant pem_file     => 'gnostest.pem';     #
+use constant output_dir   => 'test_output_dir';  # configurable as command line arg
+use constant xml_dir      => 'xml';              #
+
+
 #############
 # VARIABLES #
 #############
 
-# seconds to wait for a retry
-my $cooldown = 60;
-# 30 retries at 60 seconds each is 30 hours
-my $retries = 30;
-# retries for md5sum, 4 hours
-my $md5_sleep = 240;
-
 my $parser        = new XML::DOM::Parser;
-my $output_dir    = "test_output_dir";
-my $xml_dir       = "xml";
-my $key           = "gnostest.pem";
-my $upload_url    = "";
-my $test          = 0;
+my $output_dir    = output_dir;
+my $xml_dir       = xml_dir;
+my $pem_file      = pem_file;
+my $cooldown      = cooldown;
+my $retries       = retries;
+my $md5_sleep     = md5_sleep;
 
 my ($metadata_url,$force_copy,$help);
 GetOptions(
     "metadata-urls=s"  => \$metadata_url,
     "force-copy"       => \$force_copy,
-    "output_dir=s"     => \$output_dir,
-    "xml_dir=s"        => \$xml_dir,
+    "output-dir=s"     => \$output_dir,
+    "xml-dir=s"        => \$xml_dir,
+    "pem-file=s"       => \$pem_file,
     "help"             => \$help
     );
 
 die << 'END' if $help;
 Usage: synapse_upload_vcf.pl[--metadata-url url] 
                             [--force-copy] 
-                            [--output_dir dir]
-                            [--xml_dir]
+                            [--output-dir dir]
+                            [--xml-dir]
+                            [--pem-file file.pem]
+                            [--help]
 END
 ;
  
 
-say "SETTING UP OUTPUT DIRS";
-
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir");
 run("mkdir -p $xml_dir");
-my $final_touch_file = $output_dir."upload_complete.txt";
-
 
 my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
 my $pwd = `pwd`;
@@ -87,7 +87,6 @@ unless ($metadata_url) {
 else {
     @metadata_urls = ($metadata_url);
 }
-
 
 # First, read in the metadata and save the workflow
 # version
@@ -189,11 +188,11 @@ sub get_sample_data {
 	my $analysis_id =  $specimen->{attributes}->{analysis_id};
 	my $is_tumor = $type =~ /tumou?r|xenograft|cell line/i;
 	if ($is_tumor) {
-	    $tumor_sid = $tumor_sid ? "$tumor_sid,$sample_id" : $sample_id;
+	    $tumor_sid = $tumor_sid ? "$tumor_sid,$sample_id"   : $sample_id;
 	    $tumor_aid = $tumor_aid ? "$tumor_aid,$analysis_id" : $analysis_id;
 	}
 	else {
-	    $normal_sid = $normal_sid ? "$normal_sid,$sample_id" : $sample_id;
+	    $normal_sid = $normal_sid ? "$normal_sid,$sample_id"   : $sample_id;
 	    $normal_aid = $normal_aid ? "$normal_aid,$analysis_id" : $analysis_id;
 	}
 	
@@ -213,14 +212,21 @@ sub get_sample_data {
 sub download_vcf_files {
     my $metad = shift;
     my $url = shift;
-    my @data = @_;
+    my @files = @_;
+
     say "This is where I will be downloading files from GNOS";
-    for my $file (@data) {
-	my ($name,$checksum) = @$file;
-	my $file_name = "$output_dir/$name";
+    chdir $output_dir or die $!;
+    for my $file (@files) {
 	my $download_url = $metad->{$url}->{download_url};
+	my $command = "gtdownload -c $pem_file";
 	# and add the logic to download
+#                  .addArgument("--command 'gtdownload -c " + pemFile )
+#                  .addArgument("-v " + gnosServer + "/cghub/data/analysis/download/" + analysisId + "'")
+#                  .addArgument("--file " + analysisId + "/" + bamFile)
+#                  .addArgument("--retries 10 --sleep-min 1 --timeout-min 60");	
     }
+
+    chdir $pwd or die $!;
 }
 
 sub get_files {
@@ -454,4 +460,4 @@ sub run {
     return ($result);
 }
 
-0;
+1;
