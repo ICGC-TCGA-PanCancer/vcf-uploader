@@ -47,16 +47,17 @@ my $key           = "gnostest.pem";
 my $upload_url    = "";
 my $test          = 0;
 
-my ($metadata_url,$force_copy);
+my ($metadata_url,$force_copy,$help);
 GetOptions(
     "metadata-urls=s"  => \$metadata_url,
     "force-copy"       => \$force_copy,
     "output_dir=s"     => \$output_dir,
-    "xml_dir=s"        => \$xml_dir
+    "xml_dir=s"        => \$xml_dir,
+    "help"             => \$help
     );
 
-$metadata_url or die << 'END';
-Usage: synapse_upload_vcf.pl --metadata-url url 
+die << 'END' if $help;
+Usage: synapse_upload_vcf.pl[--metadata-url url] 
                             [--force-copy] 
                             [--output_dir dir]
                             [--xml_dir]
@@ -64,11 +65,6 @@ END
 ;
  
 
-##############
-# MAIN STEPS #
-##############
-
-# setup output dir
 say "SETTING UP OUTPUT DIRS";
 
 $output_dir = "vcf/$output_dir";
@@ -77,18 +73,31 @@ run("mkdir -p $xml_dir");
 my $final_touch_file = $output_dir."upload_complete.txt";
 
 
-# parse metadata
-my @metadata_urls = split /,/, $metadata_url;
-
-say 'COPYING FILES TO OUTPUT DIR';
-
 my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
 my $pwd = `pwd`;
 chomp $pwd;
 
+# If we don't have a url, get the list by elastic search
+my @metadata_urls;
+unless ($metadata_url) {
+    say "Getting metadata URLs by elastic search...";
+    sleep 2;
+    @metadata_urls = `./get_donors_by_elastic_search.pl`;
+    chomp @metadata_urls;
+}
+else {
+    @metadata_urls = ($metadata_url);
+}
+
+
+my %variant_workflow_version;
 for my $url (@metadata_urls) {
-    say $url;
-    my $metad = download_metadata($metadata_url);
+    say "metadata URL=$url";
+    my $metad = download_metadata($url);
+
+    # we will only grab the result for the most recent variant workflow
+
+
     my $json  = generate_output_json($metad);
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
 #    open JFILE, ">$output_dir/$analysis_id.json";
@@ -114,8 +123,6 @@ sub get_sample_data {
     my $anno  = $json->{annotations};
     my ($input_json_string) = keys %{$metad->{variant_pipeline_input_info}};
     my $input_data = decode_json $input_json_string;
-
-    die Dumper $input_data;
 
     my ($inputs)     = values %$input_data; 
 
@@ -205,7 +212,7 @@ sub generate_output_json {
 	($anno->{project_code})               = keys %{$atts->{dcc_project_code}};
 	($anno->{workflow_version})           = keys %{$atts->{variant_workflow_version}};
 	($anno->{workflow_name})              = keys %{$atts->{variant_workflow_name}};
-        $anno->{original_analysis_id}         = [keys %{$atts->{original_analysis_id}}];
+        $anno->{original_analysis_id}         = join(',',sort keys %{$atts->{original_analysis_id}});
 
 	# harder to get attributes
 	$anno->{call_type} = (grep {/\.somatic\./} @{$data->{files}}) ? 'somatic' : 'germline';
@@ -226,18 +233,14 @@ sub generate_output_json {
 }
 
 sub download_metadata {
-    my ($urls_str) = @_;
+    my $url = shift;
     my $metad = {};
-    run("mkdir -p xml2");
-    my @urls = split /,/, $urls_str;
 
-    foreach my $url (@urls) {
-	my ($id) = $url =~ m!/([^/]+)$!;
-        my $xml_path = download_url( $url, "xml/data_$id.xml" );
-        $metad->{$url} = parse_metadata($xml_path);
-    }
+    my ($id) = $url =~ m!/([^/]+)$!;
+    my $xml_path = download_url( $url, "$xml_dir/data_$id.xml" );
+    $metad->{$url} = parse_metadata($xml_path);
 
-    return ($metad);
+    return $metad;
 }
 
 sub parse_metadata {
