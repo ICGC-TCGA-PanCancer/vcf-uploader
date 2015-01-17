@@ -23,8 +23,6 @@ for my $hit (@$hits) {
     my $repo = $hit->{fields}->{'variant_calling_results.sanger_variant_calling.gnos_repo'}->[0];
     my $url  = join('',$repo,'cghub/metadata/analysisFull/',$id);
     say $url;
-    system "perl synapse_upload_vcf.pl --metadata-url $url";
-    last;
 }
 
 
