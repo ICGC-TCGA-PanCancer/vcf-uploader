@@ -14,8 +14,8 @@ use XML::XPath;
 use XML::XPath::XMLParser;
 use JSON;
 
-use XML::LibXML;
-use Time::Piece;
+#use XML::LibXML;
+#use Time::Piece;
 
 use GNOS::Upload;
 use Data::Dumper;
@@ -42,6 +42,7 @@ my $md5_sleep = 240;
 
 my $parser        = new XML::DOM::Parser;
 my $output_dir    = "test_output_dir";
+my $xml_dir       = "xml";
 my $key           = "gnostest.pem";
 my $upload_url    = "";
 my $test          = 0;
@@ -50,20 +51,29 @@ my ($metadata_url,$force_copy);
 GetOptions(
     "metadata-urls=s"  => \$metadata_url,
     "force-copy"       => \$force_copy,
-    "output_dir=s"     => \$output_dir
+    "output_dir=s"     => \$output_dir,
+    "xml_dir=s"        => \$xml_dir
     );
 
-$metadata_url or die "Usage: synapse_upload_vcf.pl --metadata-url url [--force-copy] [--output_dir dir]\n"; 
+$metadata_url or die << 'END';
+Usage: synapse_upload_vcf.pl --metadata-url url 
+                            [--force-copy] 
+                            [--output_dir dir]
+                            [--xml_dir]
+END
+;
+ 
 
 ##############
 # MAIN STEPS #
 ##############
 
 # setup output dir
-say "SETTING UP OUTPUT DIR";
+say "SETTING UP OUTPUT DIRS";
 
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir");
+run("mkdir -p $xml_dir");
 my $final_touch_file = $output_dir."upload_complete.txt";
 
 
@@ -97,11 +107,41 @@ for my $url (@metadata_urls) {
 # "executed_urls":  ["https://github.com/SeqWare/public-workflows/tree/vcf-1.1.0/workflow-DKFZ-bundle",
 #                    "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_BWA_2.6.0_SeqWare_1.0.15.zip/.../Point/to_Correct/URL"],
 
-sub get_sample_ids {
+# This method gets the information about the BWA alignment outputs/VCF inputs
+sub get_sample_data {
     my $metad = shift;
-    my ($out_info) = keys %{$metad->{variant_pipeline_output_info}};
-    my @sample_ids = $out_info =~ /"submitter_sample_id":"([^"]+)"/g;
-    return \@sample_ids;
+    my $json  = shift;
+    my $anno  = $json->{annotations};
+    my ($input_json_string) = keys %{$metad->{variant_pipeline_input_info}};
+    my $input_data = decode_json $input_json_string;
+
+    die Dumper $input_data;
+
+    my ($inputs)     = values %$input_data; 
+
+    my ($tumor_sid, $normal_sid, @urls, $tumor_aid, $normal_aid);
+    for my $specimen (@$inputs) {
+	my $type = $specimen->{attributes}->{dcc_specimen_type};
+	my $sample_id = $specimen->{specimen};
+	my $analysis_id =  $specimen->{attributes}->{analysis_id};
+	my $is_tumor = $type =~ /tumou?r|xenograft|cell line/i;
+	if ($is_tumor) {
+	    $tumor_sid = $tumor_sid ? "$tumor_sid,$sample_id" : $sample_id;
+	    $tumor_aid = $tumor_aid ? "$tumor_aid,$analysis_id" : $analysis_id;
+	}
+	else {
+	    $normal_sid = $normal_sid ? "$normal_sid,$sample_id" : $sample_id;
+	    $normal_aid = $normal_aid ? "$normal_aid,$analysis_id" : $analysis_id;
+	}
+	
+	push @urls, $specimen->{attributes}->{analysis_url};
+    }
+
+    $anno->{sample_id_normal}  = $normal_sid;
+    $anno->{aalysis_id_normal} = $normal_aid;
+    $anno->{sample_id_tumor}   = $tumor_sid;
+    $anno->{analysis_id_tumor} = $tumor_aid;
+    $json->{used_urls} = \@urls;
 }
 
 
@@ -149,8 +189,10 @@ sub generate_output_json {
 	
 	# top-level annotations
         $anno->{center_name}     = $metad->{$url}->{center_name};
-        $anno->{sample_id}       = get_sample_ids($atts);
         $anno->{reference_build} =  $metad->{$url}->{reference_build};
+
+	# get original sample information
+	get_sample_data($atts,$data);
 
 	# from the attributes hash
 	($anno->{donor_id})                   = keys %{$atts->{submitter_donor_id}};
@@ -167,7 +209,6 @@ sub generate_output_json {
 
 	# harder to get attributes
 	$anno->{call_type} = (grep {/\.somatic\./} @{$data->{files}}) ? 'somatic' : 'germline';
-	$anno->{sample_id} = get_sample_ids($atts);
 
 	my $wiki = $data->{wiki_content} = {};
 	$wiki->{title}                = $metad->{$url}->{title};
@@ -176,11 +217,8 @@ sub generate_output_json {
 	my $exe_urls = $data->{executed_urls} = [];
 	push @$exe_urls, keys %{$atts->{variant_workflow_bundle_url}};
 	push @$exe_urls, keys %{$atts->{alignment_workflow_bundle_url}};
-
-	my $used_urls = $data->{used_urls} = [];
-	push @$used_urls, "I am not sure what to to with this";
-
     }
+
 
     my $json = JSON->new->pretty->encode( $data);
     say $json;
@@ -192,12 +230,13 @@ sub download_metadata {
     my $metad = {};
     run("mkdir -p xml2");
     my @urls = split /,/, $urls_str;
-    my $i = 0;
+
     foreach my $url (@urls) {
-        $i++;
-        my $xml_path = download_url( $url, "xml2/data_$i.xml" );
+	my ($id) = $url =~ m!/([^/]+)$!;
+        my $xml_path = download_url( $url, "xml/data_$id.xml" );
         $metad->{$url} = parse_metadata($xml_path);
     }
+
     return ($metad);
 }
 
@@ -206,31 +245,19 @@ sub parse_metadata {
     my $doc        = $parser->parsefile($xml_path);
     my $m          = {};
 
-    $m->{'analysis_id'} = getVal( $doc, 'analysis_id' );
-    $m->{'center_name'} = getVal( $doc, 'center_name' );
-    $m->{'analysis_center'} = getTagAttVal( $doc, 'ANALYSIS', 'analysis_center' );
-    $m->{'title'}       = getVal( $doc, 'TITLE');
-    $m->{'description'} = getVal( $doc, 'DESCRIPTION');
-    $m->{'reference_build'} = getTagAttVal( $doc, 'STANDARD', 'short_name' );
-    $m->{'platform'} = getVal( $doc, 'platform');
+    $m->{'analysis_id'}  = getVal( $doc, 'analysis_id' );
+    $m->{'center_name'}  = getVal( $doc, 'center_name' );
+    $m->{'title'}        = getVal( $doc, 'TITLE');
+    $m->{'description'}  = getVal( $doc, 'DESCRIPTION');
+    $m->{'platform'}     = getVal( $doc, 'platform');
     $m->{'download_url'} = getVal( $doc, 'analysis_data_uri');
+    $m->{'reference_build'} = getTagAttVal( $doc, 'STANDARD', 'short_name' );
+    $m->{'analysis_center'} = getTagAttVal( $doc, 'ANALYSIS', 'analysis_center' );
 
-    push @{ $m->{'study_ref'} },
-      getValsMulti( $doc, 'STUDY_REF', "refcenter,refname" );
-    push @{ $m->{'run'} },
-      getValsMulti( $doc, 'RUN', "data_block_name,read_group_label,refname" );
-#    push @{ $m->{'target'} },
-#      getValsMulti( $doc, 'TARGET', "refcenter,refname" );
     push @{ $m->{'file'} },
       getValsMulti( $doc, 'FILE', "checksum,filename,filetype" );
 
     $m->{'analysis_attr'} = getAttrs($doc);
-#    $m->{'experiment'}    = getBlock( $xml_path,
-#        "/ResultSet/Result/experiment_xml/EXPERIMENT_SET/EXPERIMENT" );
-#    $m->{'run_block'} =
-#      getBlock( $xml_path, "/ResultSet/Result/run_xml/RUN_SET/RUN" );
-    
-#    say Dumper $m;
     return ($m);
 }
 
