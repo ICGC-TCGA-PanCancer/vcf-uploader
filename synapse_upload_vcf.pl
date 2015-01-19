@@ -299,7 +299,7 @@ sub generate_output_json {
 	($anno->{alignment_workflow_version}) = keys %{$atts->{alignment_workflow_version }};
 	($anno->{sequence_source})            = keys %{$atts->{sequence_source}};
 	($anno->{workflow_url})               = keys %{$atts->{variant_workflow_bundle_url}};
-	($anno->{workflow_src_url})           = keys %{$atts->{variant_workflow_source_url}};
+	#($anno->{workflow_src_url})           = keys %{$atts->{variant_workflow_source_url}};
 	($anno->{project_code})               = keys %{$atts->{dcc_project_code}};
 	($anno->{workflow_version})           = keys %{$atts->{variant_workflow_version}};
 	($anno->{workflow_name})              = keys %{$atts->{variant_workflow_name}};
@@ -315,6 +315,7 @@ sub generate_output_json {
 	my $exe_urls = $data->{executed_urls} = [];
 	push @$exe_urls, keys %{$atts->{variant_workflow_bundle_url}};
 	push @$exe_urls, keys %{$atts->{alignment_workflow_bundle_url}};
+	push @$exe_urls, keys %{$atts->{variant_workflow_source_url}};
     }
 
 
