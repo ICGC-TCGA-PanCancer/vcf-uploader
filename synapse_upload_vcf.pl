@@ -37,7 +37,7 @@ use constant retries      => 30;
 use constant pem_file     => 'gnostest.pem';     #
 use constant output_dir   => 'test_output_dir';  # configurable as command line arg
 use constant xml_dir      => 'xml';              #
-
+use constant parent_id    => 'syn2897245';
 
 #############
 # VARIABLES #
@@ -49,6 +49,7 @@ my $xml_dir       = xml_dir;
 my $pem_file      = pem_file;
 my $timeout       = timeout;
 my $retries       = retries;
+my $parent_id     = parent_id;
 
 my ($metadata_url,$use_cached_xml,$help);
 GetOptions(
@@ -57,6 +58,7 @@ GetOptions(
     "output-dir=s"     => \$output_dir,
     "xml-dir=s"        => \$xml_dir,
     "pem-file=s"       => \$pem_file,
+    "parent-d=s"       => \$parent_id,
     "help"             => \$help
     );
 
@@ -66,6 +68,7 @@ Usage: synapse_upload_vcf.pl[--metadata-url url]
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
+                            [--parent-id syn2897245] 
                             [--help]
 END
 ;
@@ -119,9 +122,6 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     close JFILE;
 
     say "JSON saved as $output_dir/$analysis_id.json";
-
-    # Not sure what the parentId ought to be, so use analysis_id
-    my $parentId = $analysis_id;
 
     #system "synapse_upload_vcf --parentId $parentId  < $output_dir/$analysis_id.json";
 }
