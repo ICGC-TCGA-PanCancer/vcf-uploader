@@ -120,7 +120,10 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 
     say "JSON saved as $output_dir/$analysis_id.json";
 
-    #system "synapse_upload_vcf --json_file $output_dir/$analysis_id.json";
+    # Not sure what the parentId ought to be, so use analysis_id
+    my $parentId = $analysis_id;
+
+    #system "synapse_upload_vcf --parentId $parentId  < $output_dir/$analysis_id.json";
 }
 
 # Check to see if this donor has VCF results from a more recent
