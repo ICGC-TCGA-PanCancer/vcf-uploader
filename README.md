@@ -229,5 +229,17 @@ In additon you can cache your jamboree credentials by adding them to a config fi
 The synapse upload script uses a json file with paremeters (see [example_input.json](https://github.com/ICGC-TCGA-PanCancer/vcf-uploader/blob/develop/sample_files/example_input.json) and a parentId which reprsents the folder in Synapse to upload the files to.  For example to upload the example files to DKFZ output folder:
 
      synapse_upload_vcf --parentId syn2898426 < sample_files/example_input.json
+     
+### Wrapper script for synapse_upload_vcf
+
+The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
+
+     Usage: synapse_upload_vcf.pl[--metadata-url url] 
+                            [--use-cached_xml] 
+                            [--output-dir dir]
+                            [--xml-dir]
+                            [--pem-file file.pem]
+                            [--help]
+
 
 
