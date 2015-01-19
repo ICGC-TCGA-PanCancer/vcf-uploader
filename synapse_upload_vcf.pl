@@ -23,10 +23,10 @@ my $milliseconds_in_an_hour = 3600000;
 #############################################################################################
 # 1) Use elastic search index to find a list of analysis metadata URLs for the variant
 #    worflow results we want
-# 2) Download and parse the metadta
+# 2) Download and parse the metadata
 # 3) Assemble a JSON data structure suitable for synapse upload 
-# 4) Grab the VCF worflow friles from GNOS 
-# 5) deploy the upload to synapse
+# 4) Grab the VCF worflow files from GNOS 
+# 5) Deploy the upload to synapse
 #############################################################################################
 
 
