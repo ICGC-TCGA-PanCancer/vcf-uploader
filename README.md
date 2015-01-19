@@ -63,14 +63,6 @@ There may be multiple somatic call file sets each with different samples IDs if,
 
 Note: the variant calling working group has specified ".tbi" rather than ".idx" as the tabix index extension. I have asked Annai to add support for ".tbi" and will update the code to standardize on this once the GNOS changes have been made.  Also, a README needs to be included in each tar.gz file to document the contents. In the pilot this was a separate README file but GNOS does not support uploading this directly and, therefore, it needs to included in the tar.gz file.
 
-
-## Running synapse_upload_vcf
-
-The synapse uplaod script uses a json file with paremeters (see [example_input.json](https://github.com/larssono/vcf-uploader/blob/develop/sample_files/example_input.json) and a parentId which reprsents the folder in Synapse to upload the files to.  For example to upload the example files to DKFZ output folder:
-
-     synapse_upload_vcf --parentId syn2898426 < sample_files/example_input.json
-
-
 ## Running gnos_upload_vcf
 
 The parameters:
@@ -231,5 +223,11 @@ In addition it helps to add your credentials so that you don't have to rewrite y
      synapse login -u <synapse username> -p <synapse password>  --rememberMe
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
+
+### Running synapse_upload_vcf
+
+The synapse upload script uses a json file with paremeters (see [example_input.json](https://github.com/ICGC-TCGA-PanCancer/vcf-uploader/blob/develop/sample_files/example_input.json) and a parentId which reprsents the folder in Synapse to upload the files to.  For example to upload the example files to DKFZ output folder:
+
+     synapse_upload_vcf --parentId syn2898426 < sample_files/example_input.json
 
 
