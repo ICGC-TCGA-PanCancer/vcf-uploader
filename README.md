@@ -6,19 +6,7 @@ These tool is designed to upload one or more VCF/tar.gz/index files produced dur
 
 These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
-## Dependencies for synapse_upload_vcf
 
-You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
-
-In short use the pip command to install the python package
-
-    pip install synapseclient
-
-In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
-
-     synapse login -u <synapse username> -p <synapse password>  --rememberMe
-
-In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
 
 
 ## Dependencies for gnos_upload_vcf.pl
@@ -227,3 +215,21 @@ The following items will need to be addressed by various parties:
 
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-113
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-114
+* 
+
+## Synapse upload
+### Dependencies for synapse_upload_vcf
+
+You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
+
+In short use the pip command to install the python package
+
+    pip install synapseclient
+
+In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
+
+     synapse login -u <synapse username> -p <synapse password>  --rememberMe
+
+In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
+
+
