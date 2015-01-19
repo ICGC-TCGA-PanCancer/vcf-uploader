@@ -21,15 +21,18 @@ my $milliseconds_in_an_hour = 3600000;
 #############################################################################################
 # DESCRIPTION                                                                               #
 #############################################################################################
-# 
+# 1) Use elastic search index to find a list of analysis metadata URLs for the variant
+#    worflow results we want
+# 2) Download and parse the metadta
+# 3) Assemble a JSON data structure suitable for synapse upload 
+# 4) Grab the VCF worflow friles from GNOS 
+# 5) deploy the upload to synapse
 #############################################################################################
 
 
-
 # Edit as required!
-use constant cooldown     => 60;
+use constant timeout      => 60;
 use constant retries      => 30;
-use constant md5_sleep    => 240;
 
 use constant pem_file     => 'gnostest.pem';     #
 use constant output_dir   => 'test_output_dir';  # configurable as command line arg
@@ -44,14 +47,13 @@ my $parser        = new XML::DOM::Parser;
 my $output_dir    = output_dir;
 my $xml_dir       = xml_dir;
 my $pem_file      = pem_file;
-my $cooldown      = cooldown;
+my $timeout       = timeout;
 my $retries       = retries;
-my $md5_sleep     = md5_sleep;
 
-my ($metadata_url,$force_copy,$help);
+my ($metadata_url,$use_cached_xml,$help);
 GetOptions(
     "metadata-urls=s"  => \$metadata_url,
-    "force-copy"       => \$force_copy,
+    "use-cached-xml"   => \$use_cached_xml,
     "output-dir=s"     => \$output_dir,
     "xml-dir=s"        => \$xml_dir,
     "pem-file=s"       => \$pem_file,
@@ -60,7 +62,7 @@ GetOptions(
 
 die << 'END' if $help;
 Usage: synapse_upload_vcf.pl[--metadata-url url] 
-                            [--force-copy] 
+                            [--use-cached_xml] 
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
@@ -73,7 +75,6 @@ $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir");
 run("mkdir -p $xml_dir");
 
-my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
 my $pwd = `pwd`;
 chomp $pwd;
 
@@ -93,6 +94,9 @@ else {
 my %variant_workflow_version;
 my %to_be_processed;
 for my $url (@metadata_urls) {
+    # 1/19/14 dkfz was stalled
+    #next if $url =~ /dkfz/;
+
     say "metadata URL=$url";
     my $metad = download_metadata($url);
 
@@ -115,6 +119,8 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     close JFILE;
 
     say "JSON saved as $output_dir/$analysis_id.json";
+
+    #system "synapse_upload_vcf --json_file $output_dir/$analysis_id.json";
 }
 
 # Check to see if this donor has VCF results from a more recent
@@ -122,6 +128,7 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 sub newest_workflow_version {
     return workflow_version(@_);
 }
+
 sub workflow_version {
     my $metad = shift;
     my ($data) = values %$metad;
@@ -148,8 +155,8 @@ sub is_more_recent {
 	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
 	return 1;
     }
-    elsif (
-	$primary   > $wf_version->[0]
+    elsif ( # newer
+	$primary  > $wf_version->[0]
 	||
 	($secondary > $wf_version->[1] && $primary == $wf_version->[0])
 	||
@@ -158,14 +165,13 @@ sub is_more_recent {
 	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
 	return 1;
     }
-    elsif (
+    elsif ( # ==
         $primary   == $wf_version->[0]
         &&
         $secondary == $wf_version->[1]
         &&
         $tertiary  == $wf_version->[2]
 	) {
-	$variant_workflow_version{$donor}{$name} = [$primary,$secondary,$tertiary];
 	return 1;
     }
     return 0;
@@ -182,6 +188,9 @@ sub get_sample_data {
     my ($inputs)     = values %$input_data; 
 
     my ($tumor_sid, $normal_sid, @urls, $tumor_aid, $normal_aid);
+
+    # This bit deals with the tumor/normal analysis ids
+    # and makes a hook to grab BAM download URLs
     for my $specimen (@$inputs) {
 	my $type = $specimen->{attributes}->{dcc_specimen_type};
 	my $sample_id = $specimen->{specimen};
@@ -199,11 +208,25 @@ sub get_sample_data {
 	push @urls, $specimen->{attributes}->{analysis_url};
     }
 
-    $anno->{sample_id_normal}  = $normal_sid;
+    # look up BAM download information (complicated)
+    $json->{used_urls} = get_bamfile_download_urls(@urls);
+
+    $anno->{sample_id_normal}   = $normal_sid;
     $anno->{analysis_id_normal} = $normal_aid;
-    $anno->{sample_id_tumor}   = $tumor_sid;
-    $anno->{analysis_id_tumor} = $tumor_aid;
-    $json->{used_urls} = \@urls;
+    $anno->{sample_id_tumor}    = $tumor_sid;
+    $anno->{analysis_id_tumor}  = $tumor_aid;
+    $anno->{sequence_source}    = 'WGS';
+}
+
+
+sub get_bamfile_download_urls {
+    my @meta_urls = @_;
+    my @bam_urls;
+    for my $url (@meta_urls) {
+	my $bam_url = download_alignment_metadata($url);
+	push @bam_urls, $bam_url;
+    }
+    return \@bam_urls;
 }
 
 
@@ -211,19 +234,30 @@ sub get_sample_data {
 # not concurrent with GNOS upload
 sub download_vcf_files {
     my $metad = shift;
-    my $url = shift;
+    my $url   = shift;
     my @files = @_;
 
     say "This is where I will be downloading files from GNOS";
     chdir $output_dir or die $!;
     for my $file (@files) {
+	chomp($file = `basename $file`);
 	my $download_url = $metad->{$url}->{download_url};
-	my $command = "gtdownload -c $pem_file";
-	# and add the logic to download
-#                  .addArgument("--command 'gtdownload -c " + pemFile )
-#                  .addArgument("-v " + gnosServer + "/cghub/data/analysis/download/" + analysisId + "'")
-#                  .addArgument("--file " + analysisId + "/" + bamFile)
-#                  .addArgument("--retries 10 --sleep-min 1 --timeout-min 60");	
+	my ($analysis_id) = $download_url =~ m!/([^/]+)$!;
+	my $command = "gtdownload -c $pem_file ";
+	$command .= "$download_url --file $analysis_id/$file ";
+	$command .= "--retries $retries --sleep-min 1 --timeout-min $timeout";
+	#say "This would be the download command:";
+	#say $command;
+
+	# real download
+	#system $command;
+
+	# fake download!
+	system "touch $file";
+
+	unless (-e $file) {
+	    die "There was a problem getting this file: $file";
+	}
     }
 
     chdir $pwd or die $!;
@@ -233,17 +267,9 @@ sub get_files {
     my $metad = shift;
     my $url   = shift;
     my $file_data = $metad->{$url}->{file};
-    my @file_data = map {[$_->{filename},$_->{checksum}]} @$file_data;
-    download_vcf_files($metad,$url,@file_data);
-    return @file_data;
-}
-
-sub get_file_names {
-    my $metad = shift;
-    my $url   = shift;
-    my @data  = get_files($metad,$url);
-    my @names = map {$_->[0]} @data;
-    return [map{"$output_dir/$_"} @names];
+    my @file_names = map{"$output_dir/$_"} map {$_->{filename}} @$file_data;
+    download_vcf_files($metad,$url,@file_names);
+    return \@file_names;
 }
 
 sub generate_output_json {
@@ -251,7 +277,7 @@ sub generate_output_json {
     my $data = {};
 
     foreach my $url ( keys %{$metad} ) {
-	$data->{files} = get_file_names($metad,$url);
+	$data->{files} = get_files($metad,$url);
 
 	my $atts = $metad->{$url}->{analysis_attr};
 	my $anno = $data->{annotations} = {};
@@ -305,6 +331,15 @@ sub download_metadata {
     return $metad;
 }
 
+sub download_alignment_metadata {
+    my $url = shift;
+
+    my ($id) = $url =~ m!/([^/]+)$!;
+    my $xml_path = download_url( $url, "$xml_dir/data_$id.xml" );
+    
+    return parse_alignment_metadata($xml_path);
+}
+
 sub parse_metadata {
     my ($xml_path) = @_;
     my $doc        = $parser->parsefile($xml_path);
@@ -326,6 +361,19 @@ sub parse_metadata {
     return ($m);
 }
 
+sub parse_alignment_metadata {
+    my ($xml_path) = @_;
+    my $doc        = $parser->parsefile($xml_path);
+
+    my $download_url = getVal( $doc, 'analysis_data_uri');
+    my @bams = getValsMulti( $doc, 'FILE', "checksum,filename,filetype" );
+
+    # gets just the output bam file name, we hope
+    my $bam_file = $bams[0]->{filename};
+    
+    return join('/',$download_url,$bam_file);
+}
+
 sub getBlock {
     my ( $xml_file, $xpath ) = @_;
 
@@ -344,6 +392,12 @@ sub getBlock {
 
 sub download_url {
     my ( $url, $path ) = @_;
+
+    # skip if we have a local copy and a request to use it
+    if ($use_cached_xml && -e $path && ! -z $path) {
+	say "Using cached copy of $path";
+	return $path;
+    }
 
     my $response = run("wget -q -O $path $url");
     if ($response) {
@@ -413,8 +467,9 @@ sub getTagAttVal {
     {
 	my $node = $nodes->item($i);
 	my $val = $node->getAttributeNode($att);
-	return $val->getValue;
+	return $val->getValue if $val;
     }
+    return undef;
 }
 
 sub getValsWorking {
