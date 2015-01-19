@@ -46,7 +46,7 @@ if __name__ == '__main__':
         filename = os.path.split(path)[-1]
         sample_id, pipeline_version, date, call_type, dataType  =  filename.split('.')[:5]
         fileType =  [i for i in filename.split('.')[5:] if i != 'gz'][-1]
-        file_md5 = synapseclient.utils.md5_for_file(path)
+        file_md5 = synapseclient.utils.md5_for_file(path).hexdigest()
         f.sample_id = sample_id
         f.pipeline_version = pipeline_version
         f.date = date
