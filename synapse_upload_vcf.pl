@@ -123,7 +123,7 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 
     say "JSON saved as $output_dir/$analysis_id.json";
 
-    #system "synapse_upload_vcf --parentId $parentId  < $output_dir/$analysis_id.json";
+    system "synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
 }
 
 # Check to see if this donor has VCF results from a more recent
@@ -246,14 +246,14 @@ sub download_vcf_files {
 	chomp($file = `basename $file`);
 	my $download_url = $metad->{$url}->{download_url};
 	my ($analysis_id) = $download_url =~ m!/([^/]+)$!;
+	
 	my $command = "gtdownload -c $pem_file ";
-	$command .= "$download_url --file $analysis_id/$file ";
-	$command .= "--retries $retries --sleep-min 1 --timeout-min $timeout";
+	$command .= "$download_url";
 	#say "This would be the download command:";
-	#say $command;
+	say $command;
 
 	# real download
-	#system $command;
+	system $command;
 
 	# fake download!
 	system "touch $file";
