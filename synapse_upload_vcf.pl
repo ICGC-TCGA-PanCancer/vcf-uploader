@@ -37,7 +37,8 @@ use constant retries      => 30;
 use constant pem_file     => 'gnostest.pem';     #
 use constant output_dir   => 'test_output_dir';  # configurable as command line arg
 use constant xml_dir      => 'xml';              #
-use constant parent_id    => 'syn2897245';
+use constant parent_id    => 'syn2897245';       #
+use constant pem_conf     => 'conf/pem.conf';    #
 
 #############
 # VARIABLES #
@@ -50,8 +51,10 @@ my $pem_file      = pem_file;
 my $timeout       = timeout;
 my $retries       = retries;
 my $parent_id     = parent_id;
+my $pem_conf      = pem_conf;
 
-my ($metadata_url,$use_cached_xml,$help);
+
+my ($metadata_url,$use_cached_xml,$help,$pemconf);
 GetOptions(
     "metadata-urls=s"  => \$metadata_url,
     "use-cached-xml"   => \$use_cached_xml,
@@ -59,6 +62,7 @@ GetOptions(
     "xml-dir=s"        => \$xml_dir,
     "pem-file=s"       => \$pem_file,
     "parent-d=s"       => \$parent_id,
+    "pem-conf=s"       => \$pem_conf,
     "help"             => \$help
     );
 
@@ -68,7 +72,8 @@ Usage: synapse_upload_vcf.pl[--metadata-url url]
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
-                            [--parent-id syn2897245] 
+                            [--parent-id syn2897245]
+                            [--perm-conf conf/pem.conf]
                             [--help]
 END
 ;
@@ -108,6 +113,19 @@ for my $url (@metadata_urls) {
    
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
     $to_be_processed{$analysis_id} = $metad;
+}
+
+# get the pem config
+my %pem;
+if ($pem_conf && -e $pem_conf) {
+    open CONF, $pem_conf or die $!;
+    while (<CONF>) {
+	chomp;
+	$_ or next;
+	my ($url,$pemfile) = split;
+	$pem{$url} = $pemfile;
+    }
+    close CONF;
 }
 
 # Then, do the upload only for the most recent version
@@ -240,13 +258,16 @@ sub download_vcf_files {
     my $url   = shift;
     my @files = @_;
 
+    (my $base_url = $url) =~ s!^(https?://[^/]+)\S+!$1!;
+    my $pem = $pem{$base_url} || $pem_file;
+
     say "This is where I will be downloading files from GNOS";
     chdir $output_dir or die $!;
     for my $file (@files) {
 	chomp($file = `basename $file`);
 	my $download_url = $metad->{$url}->{download_url};
 	my ($analysis_id) = $download_url =~ m!/([^/]+)$!;
-	my $command = "gtdownload -c $pem_file ";
+	my $command = "gtdownload -c $pem ";
 	$command .= "$download_url --file $analysis_id/$file ";
 	$command .= "--retries $retries --sleep-min 1 --timeout-min $timeout";
 	#say "This would be the download command:";
