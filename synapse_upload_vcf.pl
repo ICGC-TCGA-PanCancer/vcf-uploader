@@ -279,7 +279,7 @@ sub download_vcf_files {
 	# fake download!
 	# system "touch $file";
 
-	unless (-e $file) {
+	unless (-e "$analysis_id/$file") {
 	    die "There was a problem getting this file: $file";
 	}
     }
