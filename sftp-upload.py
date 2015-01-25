@@ -39,7 +39,7 @@ def upload(path, uuid):
 def main():
     
     if len(sys.argv) < 3: 
-        print "USAGE: sftp_upload.py folder password"
+        print "USAGE: sftp_upload.py password oozie-folder"
         sys.exit(1)
 
     os.system("du -Lh %s/seqware-results/upload/*" % (sys.argv[2]))
