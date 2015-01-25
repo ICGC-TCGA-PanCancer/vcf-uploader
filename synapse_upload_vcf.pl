@@ -141,7 +141,7 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 
     say "JSON saved as $output_dir/$analysis_id.json";
 
-    system "synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
+    system "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
 }
 
 # Check to see if this donor has VCF results from a more recent
@@ -279,7 +279,7 @@ sub download_vcf_files {
 	# fake download!
 	# system "touch $file";
 
-	unless (-e $file) {
+	unless (-e "$analysis_id/$file") {
 	    die "There was a problem getting this file: $file";
 	}
     }
