@@ -290,8 +290,9 @@ sub download_vcf_files {
 sub get_files {
     my $metad = shift;
     my $url   = shift;
+    my ($analysis_id) = $url =~ m!/([^/]+)$!;
     my $file_data = $metad->{$url}->{file};
-    my @file_names = map{"$output_dir/$_"} map {$_->{filename}} @$file_data;
+    my @file_names = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
     download_vcf_files($metad,$url,@file_names);
     return \@file_names;
 }
