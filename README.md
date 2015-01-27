@@ -4,6 +4,8 @@ These tool is designed to upload one or more VCF/tar.gz/index files produced dur
 
 These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
+  * [GNOS upload](#gnos-upload)
+  * [Synapse upload](#synapse-upload)
 
 
 # GNOS upload
