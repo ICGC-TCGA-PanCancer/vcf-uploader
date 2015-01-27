@@ -38,7 +38,7 @@ def upload(path):
 
 def main():
     if len(sys.argv) < 3: 
-        print "USAGE: sftp_upload.py password content_folder_path
+        print "USAGE: sftp_upload.py password content_folder_path"
         sys.exit(1)
     upload(sys.argv[2])
     
