@@ -5,6 +5,7 @@ import re
 
 # Pexpect based sftp uploader for vcf files on bionimbus
 # Drives transfers via sftp command line - simple stuff
+# Requires installation of pexpect (pip install pexpect)
 
 PROMPT='sftp'
 SERVER='tcgaftps.nci.nih.gov'
@@ -39,7 +40,7 @@ def upload(path, uuid):
 def main():
     
     if len(sys.argv) < 3: 
-        print "USAGE: sftp_upload.py password oozie-folder"
+        print "USAGE: sftp_upload.py password content folder
         sys.exit(1)
         
     upload(sys.argv[2], sys.argv[2])
