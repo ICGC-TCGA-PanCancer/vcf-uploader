@@ -1,7 +1,6 @@
 import os
 import pexpect
 import sys
-import re
 
 # Pexpect based sftp uploader for vcf files on bionimbus
 # Drives transfers via sftp command line - simple stuff
@@ -11,7 +10,8 @@ PROMPT='sftp'
 SERVER='tcgaftps.nci.nih.gov'
 USER='ByrneN'
 
-def upload(path, uuid):
+def upload(path):
+    """ Calls SFTP binary, and uploads the contents of a folder. """
     os.chdir(path)
     p = pexpect.spawn('sftp %s@%s' % (USER, SERVER))
     p.expect('password:', timeout=120)
@@ -23,7 +23,6 @@ def upload(path, uuid):
     print "MOVED TO FOLDER"
     for filename in os.listdir(path):
         if 'somatic' in filename or 'germline' in filename:
-                match = re.search(r'^(.*)\.svcp.*',filename)
                 print "Uploading: %s" % (filename)
                 p.send('put %s' % (filename) + '\n')
                 cache=""
@@ -34,18 +33,14 @@ def upload(path, uuid):
                         if cache != oldcache:
                                 print cache
                         if PROMPT in cache:
-                                break 
+                                break
     p.close()
 
 def main():
-    
     if len(sys.argv) < 3: 
-        print "USAGE: sftp_upload.py password content folder
+        print "USAGE: sftp_upload.py password content_folder_path
         sys.exit(1)
-        
-    upload(sys.argv[2], sys.argv[2])
+    upload(sys.argv[2])
     
 if __name__ == '__main__':
     main()
-    
-
