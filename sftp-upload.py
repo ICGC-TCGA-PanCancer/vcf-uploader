@@ -10,8 +10,7 @@ PROMPT='sftp'
 SERVER='tcgaftps.nci.nih.gov'
 USER='ByrneN'
 
-def upload(path):
-    """ Calls SFTP binary, and uploads the contents of a folder. """
+def upload(path, uuid):
     os.chdir(path)
     p = pexpect.spawn('sftp %s@%s' % (USER, SERVER))
     p.expect('password:', timeout=120)
@@ -37,10 +36,15 @@ def upload(path):
     p.close()
 
 def main():
-    if len(sys.argv) < 3: 
-        print "USAGE: sftp_upload.py password content_folder_path"
+
+    if len(sys.argv) < 3:
+        print "USAGE: sftp_upload.py password folder"
         sys.exit(1)
-    upload(sys.argv[2])
-    
+
+    os.system("du -Lh %s/seqware-results/upload/*" % (sys.argv[2]))
+    upload_uuid = raw_input("Copy and Paste the path to use: ")
+
+    upload(upload_uuid, sys.argv[2])
+
 if __name__ == '__main__':
     main()
