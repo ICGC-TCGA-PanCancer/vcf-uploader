@@ -40,7 +40,7 @@ use constant xml_dir      => 'xml';              #
 use constant parent_id    => 'syn3155834';       #
 use constant pem_conf     => 'conf/pem.conf';    #
 
-use constant sftp_url     => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core';
+use constant sftp_url     => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variant_calling_pilot_64/OICR_Sanger_Core';
 
 #############
 # VARIABLES #
