@@ -35,10 +35,12 @@ use constant timeout      => 60;
 use constant retries      => 30;
 
 use constant pem_file     => 'gnostest.pem';     #
-use constant output_dir   => 'test_output_dir';  # configurable as command line arg
+use constant output_dir   => 'test_output_dir';  # configurable as command line args
 use constant xml_dir      => 'xml';              #
-use constant parent_id    => 'syn2897245';       #
+use constant parent_id    => 'syn3155834';       #
 use constant pem_conf     => 'conf/pem.conf';    #
+
+use constant sftp_url     => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core';
 
 #############
 # VARIABLES #
@@ -52,7 +54,6 @@ my $timeout       = timeout;
 my $retries       = retries;
 my $parent_id     = parent_id;
 my $pem_conf      = pem_conf;
-
 
 my ($metadata_url,$use_cached_xml,$help,$pemconf);
 GetOptions(
@@ -102,9 +103,6 @@ else {
 my %variant_workflow_version;
 my %to_be_processed;
 for my $url (@metadata_urls) {
-    # 1/19/14 dkfz was stalled
-    #next if $url =~ /dkfz/;
-
     say "metadata URL=$url";
     my $metad = download_metadata($url);
 
@@ -133,7 +131,7 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     next unless newest_workflow_version($metad);
     
     my $json  = generate_output_json($metad);
-    say $json;
+    #say $json;
 
     open JFILE, ">$output_dir/$analysis_id.json";
     print JFILE $json;
@@ -141,7 +139,8 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 
     say "JSON saved as $output_dir/$analysis_id.json";
 
-    system "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
+    #system "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
+    say "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
 }
 
 # Check to see if this donor has VCF results from a more recent
@@ -268,18 +267,18 @@ sub download_vcf_files {
 	my $download_url = $metad->{$url}->{download_url};
 	my ($analysis_id) = $download_url =~ m!/([^/]+)$!;
 	my $command = "gtdownload -c $pem_file ";
-	$command .= "$download_url";
+	$command .= "$download_url/$file";
 
         #say "This would be the download command:";
 	say $command;
 
 	# real download
-	system $command;
+	# system $command;
 
 	# fake download!
-	# system "touch $file";
+	system "touch $file";
 
-	unless (-e "$analysis_id/$file") {
+	unless (-e $file) {
 	    die "There was a problem getting this file: $file";
 	}
     }
@@ -291,10 +290,11 @@ sub get_files {
     my $metad = shift;
     my $url   = shift;
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
-    my $file_data = $metad->{$url}->{file};
-    my @file_names = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
-    download_vcf_files($metad,$url,@file_names);
-    return \@file_names;
+    my $file_data     = $metad->{$url}->{file};
+    my @files_to_download = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
+    my @files_to_upload   = map{sftp_url . "/$_"} map {$_->{filename}} @$file_data;
+    download_vcf_files($metad,$url,@files_to_download);
+    return \@files_to_upload;
 }
 
 sub generate_output_json {
