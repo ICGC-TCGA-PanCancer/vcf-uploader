@@ -60,6 +60,18 @@ if __name__ == '__main__':
         f = syn.store(f)
         provenance = syn.setProvenance(f, provenance)
 
-        #Add Description
-        wiki = Wiki(title = params['wiki_content']['title'], owner=f, markdown=params['wiki_content']['description'])
-        wiki = syn.store(wiki)
+        #Add Description Wiki
+        try:
+            wiki = syn.getWiki(f)
+        except synapseclient.exceptions.SynapseHTTPError as err:
+            if err.response.status_code == 404:
+                wiki = Wiki(title = params['wiki_content']['title'], owner=f, markdown=params['wiki_content']['description'])
+            else:
+                raise err
+        else:
+            wiki.title = params['wiki_content']['title']
+            wiki.owner=f
+            wiki.markdown=params['wiki_content']['description']
+        syn.store(wiki)
+
+
