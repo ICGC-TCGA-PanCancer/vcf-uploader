@@ -51,7 +51,9 @@ if __name__ == '__main__':
         f.pipeline_version = pipeline_version
         f.date = date
         f.call_type = call_type
-        f.dataType = dataType
+        f.dataSubType = dataType
+        f.dataType = 'DNA'
+        file.disease = 'Cancer'
         f.fileType = fileType
         f.file_md5 = file_md5
 
