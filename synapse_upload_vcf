@@ -7,18 +7,17 @@ import json
 import synapseclient
 from synapseclient import File, Activity, Wiki
 
-
-
 def build_parser():
     """Set up argument parser and returns"""
     parser = argparse.ArgumentParser(description='Uploads files to Synapse by using a json document for meta data.')
+    parser.add_argument('--upload-files',dest='upload_files',action="store_true",
+                        help='Flag to indicate that local files are to be uploaded to synapse')
     parser.add_argument('--parentId', dest='parentId', required=True, 
                         help='Id for Folder where to store files (example DKFZ: syn2898426, Sanger: syn2897245)')
     parser.add_argument('json_file', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
                         help='json file with parameters (optionally read from stdin')
-    return parser
 
-    
+    return parser
 
 
 if __name__ == '__main__':
@@ -46,19 +45,25 @@ if __name__ == '__main__':
         filename = os.path.split(path)[-1]
         sample_id, pipeline_version, date, call_type, dataType  =  filename.split('.')[:5]
         fileType =  [i for i in filename.split('.')[5:] if i != 'gz'][-1]
-        #file_md5 = synapseclient.utils.md5_for_file(path).hexdigest()
+
+        #Disposition of locally stored files for upload
+        if args.upload_files:
+            f.file_md5 = synapseclient.utils.md5_for_file(path).hexdigest()
+        else:
+            f.synapseStore = False
+
         f.sample_id = sample_id
         f.pipeline_version = pipeline_version
         f.date = date
         f.call_type = call_type
         f.dataSubType = dataType
         f.dataType = 'DNA'
-        file.disease = 'Cancer'
+        f.disease = 'Cancer'
         f.fileType = fileType
-        f.synapseStore = False
-        #f.file_md5 = file_md5
+
 
         #Persist up to Synapse
+        print filename
         f = syn.store(f)
         provenance = syn.setProvenance(f, provenance)
 

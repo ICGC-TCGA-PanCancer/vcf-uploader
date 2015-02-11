@@ -16,24 +16,20 @@ use JSON;
 
 use Data::Dumper;
 
-my $milliseconds_in_an_hour = 3600000;
-
 #############################################################################################
 # DESCRIPTION                                                                               #
 #############################################################################################
 # 1) Use elastic search index to find a list of analysis metadata URLs for the variant
-#    worflow results we want
+#    worflow results we want.  Alternatively, use the suypplied GNOS metadata URL and skip
+#    elastic search
 # 2) Download and parse the metadata
 # 3) Assemble a JSON data structure suitable for synapse upload 
-# 4) Grab the VCF worflow files from GNOS 
+# 4) Grab the VCF worflow files from GNOS, if required 
 # 5) Deploy the upload to synapse
 #############################################################################################
 
 
 # Edit as required!
-use constant timeout      => 60;
-use constant retries      => 30;
-
 use constant pem_file     => 'gnostest.pem';     #
 use constant output_dir   => 'test_output_dir';  # configurable as command line args
 use constant xml_dir      => 'xml';              #
@@ -50,31 +46,40 @@ my $parser        = new XML::DOM::Parser;
 my $output_dir    = output_dir;
 my $xml_dir       = xml_dir;
 my $pem_file      = pem_file;
-my $timeout       = timeout;
-my $retries       = retries;
 my $parent_id     = parent_id;
 my $pem_conf      = pem_conf;
+my $sftp_url      = sftp_url;
+my $download      = 0;
 
-my ($metadata_url,$use_cached_xml,$help,$pemconf);
+my ($metadata_url,$use_cached_xml,$help,$pemconf,$local_path,$local_xml);
+$help = 1 unless @ARGV > 0;
 GetOptions(
-    "metadata-urls=s"  => \$metadata_url,
+    "metadata-url=s"   => \$metadata_url,
     "use-cached-xml"   => \$use_cached_xml,
+    "local-xml=s"      => \$local_xml,
+    "sftp-url=s"       => \$sftp_url,
     "output-dir=s"     => \$output_dir,
     "xml-dir=s"        => \$xml_dir,
     "pem-file=s"       => \$pem_file,
-    "parent-d=s"       => \$parent_id,
+    "parent-id=s"      => \$parent_id,
     "pem-conf=s"       => \$pem_conf,
+    "local-path=s"     => \$local_path,
+    "download"         => \$download,
     "help"             => \$help
     );
 
 die << 'END' if $help;
 Usage: synapse_upload_vcf.pl[--metadata-url url] 
                             [--use-cached_xml] 
+                            [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
                             [--parent-id syn2897245]
                             [--perm-conf conf/pem.conf]
+                            [--local-path /path/to/local/files] 
+                            [--sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variant_calling_pilot_64/OICR_Sanger_Core]
+                            [--download optional flag to Download files from GNOS]
                             [--help]
 END
 ;
@@ -89,13 +94,13 @@ chomp $pwd;
 
 # If we don't have a url, get the list by elastic search
 my @metadata_urls;
-unless ($metadata_url) {
+unless ($metadata_url || $local_xml) {
     say "Getting metadata URLs by elastic search...";
     @metadata_urls = `./get_donors_by_elastic_search.pl`;
     chomp @metadata_urls;
 }
 else {
-    @metadata_urls = ($metadata_url);
+    @metadata_urls = grep {defined $_} ($local_xml,$metadata_url);
 }
 
 # First, read in the metadata and save the workflow
@@ -104,7 +109,7 @@ my %variant_workflow_version;
 my %to_be_processed;
 for my $url (@metadata_urls) {
     say "metadata URL=$url";
-    my $metad = download_metadata($url);
+    my $metad = download_metadata($url,$local_xml);
 
     # save workflow version 
     workflow_version($metad);
@@ -127,11 +132,11 @@ if ($pem_conf && -e $pem_conf) {
 }
 
 # Then, do the upload only for the most recent version
+my $go;
 while (my ($analysis_id,$metad) = each %to_be_processed) {
     next unless newest_workflow_version($metad);
-    
+    #next unless $analysis_id =~ /2f8bb636-5828-4106-97cc-041a6842cf27|6a60ea77-f728-48c4-b83b-8a84bb61248a|803ca8c2-a57e-4d25-b6ae-410f60365b39/;
     my $json  = generate_output_json($metad);
-    #say $json;
 
     open JFILE, ">$output_dir/$analysis_id.json";
     print JFILE $json;
@@ -139,8 +144,10 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
 
     say "JSON saved as $output_dir/$analysis_id.json";
 
-    #system "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
-    say "./synapse_upload_vcf --parentId $parent_id  < $output_dir/$analysis_id.json";
+    my $upload_flag = $local_path ? '--upload-files' : '';
+
+    run("./synapse_upload_vcf $upload_flag --parentId $parent_id  < $output_dir/$analysis_id.json");
+
 }
 
 # Check to see if this donor has VCF results from a more recent
@@ -227,6 +234,7 @@ sub get_sample_data {
 	
 	push @urls, $specimen->{attributes}->{analysis_url};
     }
+    say "TUMOR\t$tumor_sid\t$tumor_aid";
 
     # look up BAM download information (complicated)
     $json->{used_urls} = get_bamfile_download_urls(@urls);
@@ -276,7 +284,8 @@ sub download_vcf_files {
 	# system $command;
 
 	# fake download!
-	system "touch $file";
+	my $rand = rand()*100;
+	system "echo $rand > $file";
 
 	unless (-e $file) {
 	    die "There was a problem getting this file: $file";
@@ -291,9 +300,22 @@ sub get_files {
     my $url   = shift;
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
     my $file_data     = $metad->{$url}->{file};
-    my @files_to_download = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
-    my @files_to_upload   = map{sftp_url . "/$_"} map {$_->{filename}} @$file_data;
-    download_vcf_files($metad,$url,@files_to_download);
+
+    if ($download && !$local_path) {
+	my @files_to_download = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
+	download_vcf_files($metad,$url,@files_to_download);
+    }
+
+    if ($local_path) {
+	unless (-d $local_path) {
+	    die "Error: Local path $local_path does not exist!";
+	}
+	$local_path =~ s!/$!!;
+    }
+
+
+    my $file_path = $local_path || sftp_url;
+    my @files_to_upload   = map{$file_path . "/$_"} map {$_->{filename}} @$file_data;
     return \@files_to_upload;
 }
 
@@ -348,10 +370,17 @@ sub generate_output_json {
 
 sub download_metadata {
     my $url = shift;
+    my $local_xml = shift;
+
     my $metad = {};
 
     my ($id) = $url =~ m!/([^/]+)$!;
-    my $xml_path = download_url( $url, "$xml_dir/data_$id.xml" );
+    $id =~ s/\.xml$//;
+
+    my $xml_path = $local_xml || download_url( $url, "$xml_dir/data_$id.xml" );
+
+    -e $xml_path or die "Error: Local xml file $xml_path does not exist!";
+
     $metad->{$url} = parse_metadata($xml_path);
 
     return $metad;

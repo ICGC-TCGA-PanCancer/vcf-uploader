@@ -4,14 +4,28 @@ use JSON;
 use Data::Dumper;
 
 use constant URL   => 'https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull';
-use constant INDEX => 'p_150115030101';
+use constant QUERY => 'curl -s -XGET "http://pancancer.info/elasticsearch/INDEX/' .
+                      'donor/_search?size=1000&fields=variant_calling_results.sanger_var' .
+                      'iant_calling.gnos_repo,variant_calling_results.sanger_variant_calling.gnos_id" -d '; 
 
-my $query;
+
+my $query_file = shift;
+my $index = shift || 'p_150205030101';
+my $query = QUERY;
+$query =~ s/INDEX/$index/;
+
 {
     $/ = '';
-    $query = <DATA>;
-    my $index = INDEX;
-    $query =~ s/CURRENT_INDEX/$index/;
+    my $query_string;
+    unless ($query_file) {
+	$query_string = <DATA>;
+    }
+    else {
+	open Q, $query_file or die $!;
+	$query_string = <Q>;
+	close Q;
+    }
+    $query .= qq('$query_string');
 }
 
 my $json = JSON->new->allow_nonref;
@@ -27,7 +41,6 @@ for my $hit (@$hits) {
 
 
 __DATA__
-curl -s -XGET "http://pancancer.info/elasticsearch/CURRENT_INDEX/donor/_search?size=1000&fields=variant_calling_results.sanger_variant_calling.gnos_repo,variant_calling_results.sanger_variant_calling.gnos_id" -d '
 {
    "query":{
       "match_all" : { }
@@ -87,4 +100,4 @@ curl -s -XGET "http://pancancer.info/elasticsearch/CURRENT_INDEX/donor/_search?s
          ]
       }
    }
-}'
+}

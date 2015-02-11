@@ -234,12 +234,44 @@ The synapse upload script uses a json file with paremeters (see [example_input.j
 
 The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
 
-     Usage: synapse_upload_vcf.pl[--metadata-url url] 
+Usage: synapse_upload_vcf.pl[--metadata-url url] 
+                            [--use-cached_xml] 
+                            [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
+                            [--output-dir dir]
+                            [--xml-dir]
+                            [--pem-file file.pem]
+                            [--parent-id syn2897245]
+                            [--perm-conf conf/pem.conf]
+                            [--local-path /path/to/local/files] 
+                            [--sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variant_calling_pilot_64/OICR_Sanger_Core]
+                            [--download optional flag to Download files from GNOS]
+                            [--help]
                             [--use-cached_xml] 
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
                             [--help]
+
+### Example: use a single metadata URL
+
+  ./synapse_upload_vcf.pl --metadara-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
+
+### Example: use a local metadata xml file   
+
+  ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
+
+### Example: use elastic search to get metadata URLs (default); downbload vcf files from GNOS
+
+  ./synapse_upload_vcf.pl --download 
+
+### Example: use a local metadata xml file; upload vcf files to synapse using a local file path
+
+  ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
+
+
+
+
+
 
 
 
