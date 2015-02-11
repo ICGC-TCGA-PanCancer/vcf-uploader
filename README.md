@@ -214,15 +214,31 @@ The following items will need to be addressed by various parties:
 
 You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
 
-In short use the pip command to install the python package
 
-    pip install synapseclient
+Make sure python dev is installed
+
+    sudo apt-get install python-dev
+
+In short use the pip command to install the python packages (use the --upgrade flag if older versions are already installed)
+
+    sudo pip install synapseclient
+    sudo pip install python-dateutil
+    sudo pip install elasticsearch
+    sudo pip install xmltodict
+    sudo pip install pysftp
+    sudo pip install paramiko
 
 In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
 
      synapse login -u <synapse username> -p <synapse password>  --rememberMe
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
+
+  cat ~/.synapseConfig 
+  [sftp://tcgaftps.nci.nih.gov]
+  username = Username
+  password = password
+
 
 ## Running synapse_upload_vcf
 
