@@ -230,14 +230,14 @@ In short use the pip command to install the python packages (use the --upgrade f
 
 In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
 
-     synapse login -u <synapse username> -p <synapse password>  --rememberMe
+    synapse login -u <synapse username> -p <synapse password>  --rememberMe
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
 
-     ~/.synapseConfig 
-     [sftp://tcgaftps.nci.nih.gov]
-     username = Username
-      password = password
+    ~/.synapseConfig 
+    [sftp://tcgaftps.nci.nih.gov]
+    username = Username
+    password = password
 
 
 ## Running synapse_upload_vcf
@@ -270,19 +270,19 @@ Usage: synapse_upload_vcf.pl[--metadata-url url]
 
 ### Example: use a single metadata URL
 
-  ./synapse_upload_vcf.pl --metadara-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
+    ./synapse_upload_vcf.pl --metadara-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
 
 ### Example: use a local metadata xml file   
 
-  ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
 
 ### Example: use elastic search to get metadata URLs (default); downbload vcf files from GNOS
 
-  ./synapse_upload_vcf.pl --download 
+    ./synapse_upload_vcf.pl --download 
 
 ### Example: use a local metadata xml file; upload vcf files to synapse using a local file path
 
-  ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
 
 
 
