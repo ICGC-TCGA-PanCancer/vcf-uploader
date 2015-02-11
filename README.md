@@ -268,19 +268,19 @@ Usage: synapse_upload_vcf.pl[--metadata-url url]
                             [--pem-file file.pem]
                             [--help]
 
-### Example: use a single metadata URL
+<b>Example: use a single metadata URL</b>
 
-    ./synapse_upload_vcf.pl --metadara-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
+    ./synapse_upload_vcf.pl --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
 
-### Example: use a local metadata xml file   
+<b>Example: use a local metadata xml file</b>   
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
 
-### Example: use elastic search to get metadata URLs (default); downbload vcf files from GNOS
+<b>Example: use elastic search to get metadata URLs (default); downbload vcf files from GNOS</b>
 
     ./synapse_upload_vcf.pl --download 
 
-### Example: use a local metadata xml file; upload vcf files to synapse using a local file path
+<b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
 
