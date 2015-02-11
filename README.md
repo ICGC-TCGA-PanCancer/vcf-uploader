@@ -234,10 +234,10 @@ In addition it helps to add your credentials so that you don't have to rewrite y
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
 
-  cat ~/.synapseConfig 
-  [sftp://tcgaftps.nci.nih.gov]
-  username = Username
-  password = password
+     ~/.synapseConfig 
+     [sftp://tcgaftps.nci.nih.gov]
+     username = Username
+      password = password
 
 
 ## Running synapse_upload_vcf
