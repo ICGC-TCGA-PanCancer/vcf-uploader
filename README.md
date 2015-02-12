@@ -217,7 +217,7 @@ You will need to have the Python synapseclient installed.  Details for installin
 
 Make sure python dev is installed
 
-    sudo apt-get install python-dev
+    sudo apt-get install python-dev python-pip
 
 In short use the pip command to install the python packages (use the --upgrade flag if older versions are already installed)
 
