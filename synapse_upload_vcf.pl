@@ -313,8 +313,8 @@ sub get_files {
 	$local_path =~ s!/$!!;
     }
 
-
-    my $file_path = $local_path || sftp_url;
+    # use local path or user supplied URL if available
+    my $file_path = $local_path || $sftp_url || sftp_url;
     my @files_to_upload   = map{$file_path . "/$_"} map {$_->{filename}} @$file_data;
     return \@files_to_upload;
 }
