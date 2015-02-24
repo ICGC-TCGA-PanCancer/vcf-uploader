@@ -14,11 +14,13 @@ def build_parser():
                         help='Flag to indicate that local files are to be uploaded to synapse')
     parser.add_argument('--parentId', dest='parentId', required=True, 
                         help='Id for Folder where to store files (example DKFZ: syn2898426, Sanger: syn2897245)')
-    parser.add_argument('json_file', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
-                        help='json file with parameters (optionally read from stdin')
 
+    parser.add_argument('--url', dest='url', default = None, 
+                        help=('Overides the url/path where file is uploaded. '
+                              'Ex: sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variants/'))
+    parser.add_argument('json_file', type=argparse.FileType('r'),
+                        help='json file with parameters')
     return parser
-
 
 if __name__ == '__main__':
     args = build_parser().parse_args()
@@ -37,7 +39,17 @@ if __name__ == '__main__':
 
     #Step through list of files and store in Synapse
     for path in params['files']:
-        f = File(path, parentId=args.parentId)
+        if args.url is not None:
+            url = syn._sftpUploadFile(path, args.url)
+            f = File(url, parentId=args.parentId)
+        else:
+            f = File(path, parentId=args.parentId)
+        print f.path
+
+        #Set storage option if it is a URL
+        if synapseclient.utils.is_url(f.path):
+            f['synapseStore'] = False
+
         #Set annotations
         f.annotations = params['annotations']
 
