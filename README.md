@@ -264,13 +264,14 @@ The use case for bulk uploading to synapse is that the files and metadata are in
                                 [--perm-conf conf/pem.conf]
                                 [--local-path /path/to/local/files]
                                 [--jamboree-sftp-url url of files that are ALREADY UPLOADED on the jamboree sftp server]
-      			        [--synapse-sftp-url url to which files WILL BE UPLOADED via synapse]
+                                [--synapse-sftp-url url to which files WILL BE UPLOADED via synapse]
                                 [--download optional flag to Download files from GNOS]
                                 [--help]
 
 <b>Example: use a single metadata URL</b>
 
-    ./synapse_upload_vcf.pl --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
+    ./synapse_upload_vcf.pl \
+    --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790
 
 <b>Example: use a local metadata xml file</b>   
 
@@ -282,11 +283,13 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
 <b>Example: use elastic search to get metadata URLs (default); provide the jamboree sftp URL for the files (no local files)
 
-    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+    ./synapse_upload_vcf.pl \
+    --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
 
 <b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
 
-    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml \
+    --local-path vcf/test_output_dir
 
 <b>Example: use local metadata xml and local files, specify the sftp URL for synapse to use</b>
 
