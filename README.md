@@ -228,7 +228,11 @@ In additon you can cache your jamboree credentials by adding them to a config fi
 
 The synapse upload script uses a json file with paremeters (see [example_input.json](https://github.com/ICGC-TCGA-PanCancer/vcf-uploader/blob/develop/sample_files/example_input.json) and a parentId which reprsents the folder in Synapse to upload the files to.  For example to upload the example files to DKFZ output folder:
 
-     synapse_upload_vcf --parentId syn2898426 < sample_files/example_input.json
+     synapse_upload_vcf --parentId syn2898426 sample_files/example_input.json
+
+to upload Sanger files but store them at a specific spot in the sftp site:
+
+     synapse_upload_vcf --parentId syn3155834 --url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants sample_files/example_input.json
      
 ## Wrapper script for synapse_upload_vcf
 
