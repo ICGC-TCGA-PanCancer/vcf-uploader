@@ -36,7 +36,7 @@ use constant xml_dir      => 'xml';              #
 use constant parent_id    => 'syn3155834';       #
 use constant pem_conf     => 'conf/pem.conf';    #
 
-use constant sftp_url     => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variant_calling_pilot_64/OICR_Sanger_Core';
+use constant jamboree_sftp_url  => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01';
 
 #############
 # VARIABLES #
@@ -48,16 +48,15 @@ my $xml_dir       = xml_dir;
 my $pem_file      = pem_file;
 my $parent_id     = parent_id;
 my $pem_conf      = pem_conf;
-my $sftp_url      = sftp_url;
 my $download      = 0;
+my $jamboree_sftp_url = jamboree_sftp_url;
 
-my ($metadata_url,$use_cached_xml,$help,$pemconf,$local_path,$local_xml);
+my ($synapse_sftp_url,$metadata_url,$use_cached_xml,$help,$pemconf,$local_path,$local_xml);
 $help = 1 unless @ARGV > 0;
 GetOptions(
     "metadata-url=s"   => \$metadata_url,
     "use-cached-xml"   => \$use_cached_xml,
     "local-xml=s"      => \$local_xml,
-    "sftp-url=s"       => \$sftp_url,
     "output-dir=s"     => \$output_dir,
     "xml-dir=s"        => \$xml_dir,
     "pem-file=s"       => \$pem_file,
@@ -65,7 +64,9 @@ GetOptions(
     "pem-conf=s"       => \$pem_conf,
     "local-path=s"     => \$local_path,
     "download"         => \$download,
-    "help"             => \$help
+    "help"             => \$help,
+    "jamboree-sftp-url=s" => \$jamboree_sftp_url,
+    "synapse-sftp-url=s"  => \$synapse_sftp_url,
     );
 
 die << 'END' if $help;
@@ -78,7 +79,8 @@ Usage: synapse_upload_vcf.pl[--metadata-url url]
                             [--parent-id syn2897245]
                             [--perm-conf conf/pem.conf]
                             [--local-path /path/to/local/files] 
-                            [--sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/variant_calling_pilot_64/OICR_Sanger_Core]
+                            [--jamboree-sftp-url url of files that are ALREADY on the jamboree sftp server]
+                            [--synapse-sftp-url url to which files will be uploaded via synapse] 
                             [--download optional flag to Download files from GNOS]
                             [--help]
 END
@@ -135,7 +137,7 @@ if ($pem_conf && -e $pem_conf) {
 my $go;
 while (my ($analysis_id,$metad) = each %to_be_processed) {
     next unless newest_workflow_version($metad);
-    #next unless $analysis_id =~ /2f8bb636-5828-4106-97cc-041a6842cf27|6a60ea77-f728-48c4-b83b-8a84bb61248a|803ca8c2-a57e-4d25-b6ae-410f60365b39/;
+
     my $json  = generate_output_json($metad);
 
     open JFILE, ">$output_dir/$analysis_id.json";
@@ -145,8 +147,9 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     say "JSON saved as $output_dir/$analysis_id.json";
 
     my $upload_flag = $local_path ? '--upload-files' : '';
+    my $url_flag    = $synapse_sftp_url ? '--url $synapse_ftp_url' : '';
 
-    run("./synapse_upload_vcf $upload_flag --parentId $parent_id  < $output_dir/$analysis_id.json");
+    run("./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json");
 
 }
 
@@ -281,11 +284,11 @@ sub download_vcf_files {
 	say $command;
 
 	# real download
-	# system $command;
+	system $command;
 
 	# fake download!
-	my $rand = rand()*100;
-	system "echo $rand > $file";
+	#my $rand = rand()*100;
+	#system "echo $rand > $file";
 
 	unless (-e $file) {
 	    die "There was a problem getting this file: $file";
@@ -314,7 +317,9 @@ sub get_files {
     }
 
     # use local path or user supplied URL if available
-    my $file_path = $local_path || $sftp_url || sftp_url;
+    # if $local_path, the files are local (upload to synapse)
+    # if $jamboree_sftp_url, files are already on jamboree (do not upload to synapse)
+    my $file_path = $local_path || $jamboree_sftp_url || jamboree_sftp_url;
     my @files_to_upload   = map{$file_path . "/$_"} map {$_->{filename}} @$file_data;
     return \@files_to_upload;
 }

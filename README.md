@@ -254,21 +254,18 @@ to upload Sanger files but store them at a specific spot in the sftp site:
 
 The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
 
-    Usage: synapse_upload_vcf.pl[--metadata-url url] 
-                                [--use-cached_xml] 
-                                [--local-xml    /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
-                                [--output-dir   dir]
+    Usage: synapse_upload_vcf.pl[--metadata-url url]
+                                [--use-cached_xml]
+                                [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
+                                [--output-dir dir]
                                 [--xml-dir]
-                                [--pem-file     file.pem]
-                                [--parent-id    syn2897245]
-                                [--perm-conf    conf/pem.conf]
-                                [--local-path   /path/to/local/files] 
-                                [--sftp-url     sftp://tcgaftps.nci.nih.gov/etc/and-so-on]
-                                [--download     optional flag to Download files from GNOS]
-                                [--help]
-                                [--use-cached_xml] 
-                                [--output-dir   dir]
-                                [--xml-dir]
+                                [--pem-file file.pem]
+                                [--parent-id syn2897245]
+                                [--perm-conf conf/pem.conf]
+                                [--local-path /path/to/local/files]
+                                [--jamboree-sftp-url url of files that are ALREADY UPLOADED on the jamboree sftp server]
+      			        [--synapse-sftp-url url to which files WILL BE UPLOADED via synapse]
+                                [--download optional flag to Download files from GNOS]
                                 [--help]
 
 <b>Example: use a single metadata URL</b>
@@ -283,10 +280,19 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
     ./synapse_upload_vcf.pl --download 
 
+<b>Example: use elastic search to get metadata URLs (default); provide the jamboree sftp URL for the files (no local files)
+
+    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+
 <b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
 
+<b>Example: use local metadata xml and local files, specify the sftp URL for synapse to use</b>
+
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml \
+    --local-path vcf/test_output_dir \
+    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
 
 
 
