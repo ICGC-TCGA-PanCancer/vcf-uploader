@@ -263,8 +263,8 @@ The use case for bulk uploading to synapse is that the files and metadata are in
                                 [--parent-id syn2897245]
                                 [--perm-conf conf/pem.conf]
                                 [--local-path /path/to/local/files]
-                                [--jamboree-sftp-url url of files that are ALREADY UPLOADED on the jamboree sftp server]
-                                [--synapse-sftp-url url to which files WILL BE UPLOADED via synapse]
+                                [--jamboree-sftp-url url of files ALREADY UPLOADED to jamboree]
+                                [--synapse-sftp-url url to which files WILL BE UPLOADED by synapse]
                                 [--download optional flag to Download files from GNOS]
                                 [--help]
 
