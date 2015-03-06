@@ -36,7 +36,7 @@ use constant xml_dir      => 'xml';              #
 use constant parent_id    => 'syn3155834';       #
 use constant pem_conf     => 'conf/pem.conf';    #
 
-use constant jamboree_sftp_url  => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01';
+use constant jamboree_sftp_url  => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch02';
 
 #############
 # VARIABLES #
@@ -51,7 +51,7 @@ my $pem_conf      = pem_conf;
 my $download      = 0;
 my $jamboree_sftp_url = jamboree_sftp_url;
 
-my ($synapse_sftp_url,$metadata_url,$use_cached_xml,$help,$pemconf,$local_path,$local_xml);
+my ($synapse_sftp_url,$metadata_url,$use_cached_xml,$help,$pemconf,$local_path,$local_xml,$metadata_url_file);
 $help = 1 unless @ARGV > 0;
 GetOptions(
     "metadata-url=s"   => \$metadata_url,
@@ -67,21 +67,23 @@ GetOptions(
     "help"             => \$help,
     "jamboree-sftp-url=s" => \$jamboree_sftp_url,
     "synapse-sftp-url=s"  => \$synapse_sftp_url,
+    "metadata-url-file=s" => \$metadata_url_file
     );
 
 die << 'END' if $help;
 Usage: synapse_upload_vcf.pl[--metadata-url url] 
                             [--use-cached_xml] 
                             [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
+                            [--metadata-url-file /path/to/metadata_url_file -- a list of metadata urls]
                             [--output-dir dir]
                             [--xml-dir]
                             [--pem-file file.pem]
                             [--parent-id syn2897245]
-                            [--perm-conf conf/pem.conf]
+                            [--pem-conf conf/pem.conf]
                             [--local-path /path/to/local/files] 
                             [--jamboree-sftp-url url of files that are ALREADY on the jamboree sftp server]
                             [--synapse-sftp-url url to which files will be uploaded via synapse] 
-                            [--download optional flag to Download files from GNOS]
+                            [--download optional flag to download vcf files from GNOS]
                             [--help]
 END
 ;
@@ -96,10 +98,18 @@ chomp $pwd;
 
 # If we don't have a url, get the list by elastic search
 my @metadata_urls;
-unless ($metadata_url || $local_xml) {
+unless ($metadata_url || $local_xml || $metadata_url_file) {
     say "Getting metadata URLs by elastic search...";
     @metadata_urls = `./get_donors_by_elastic_search.pl`;
     chomp @metadata_urls;
+}
+elsif ($metadata_url_file) {
+    open MFILE, $metadata_url_file or die "Could not open $metadata_url_file";
+    while (<MFILE>) {
+	chomp;
+	push @metadata_urls, $_;
+    }
+    close MFILE;
 }
 else {
     @metadata_urls = grep {defined $_} ($local_xml,$metadata_url);
@@ -149,6 +159,7 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     my $upload_flag = $local_path ? '--upload-files' : '';
     my $url_flag    = $synapse_sftp_url ? '--url $synapse_ftp_url' : '';
 
+    #say "./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json";
     run("./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json");
 
 }
@@ -281,10 +292,10 @@ sub download_vcf_files {
 	$command .= "$download_url/$file";
 
         #say "This would be the download command:";
-	say $command;
+	#say $command;
 
 	# real download
-	system $command;
+	run($command);
 
 	# fake download!
 	#my $rand = rand()*100;
@@ -304,9 +315,10 @@ sub get_files {
     my ($analysis_id) = $url =~ m!/([^/]+)$!;
     my $file_data     = $metad->{$url}->{file};
 
-    if ($download && !$local_path) {
+    if ($download) {
 	my @files_to_download = map{"$output_dir/$analysis_id/$_"} map {$_->{filename}} @$file_data;
 	download_vcf_files($metad,$url,@files_to_download);
+	$local_path = $output_dir;
     }
 
     if ($local_path) {
