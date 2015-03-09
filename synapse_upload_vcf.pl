@@ -70,7 +70,7 @@ GetOptions(
     "metadata-url-file=s" => \$metadata_url_file
     );
 
-die << 'END' if $help;
+say << 'END' and exit if $help;
 Usage: synapse_upload_vcf.pl[--metadata-url url] 
                             [--use-cached_xml] 
                             [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
@@ -157,9 +157,9 @@ while (my ($analysis_id,$metad) = each %to_be_processed) {
     say "JSON saved as $output_dir/$analysis_id.json";
 
     my $upload_flag = $local_path ? '--upload-files' : '';
-    my $url_flag    = $synapse_sftp_url ? '--url $synapse_ftp_url' : '';
+    my $url_flag    = $synapse_sftp_url ? "--url $synapse_sftp_url" : '';
 
-    #say "./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json";
+    say "./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json";
     run("./synapse_upload_vcf $upload_flag $url_flag --parentId $parent_id  $output_dir/$analysis_id.json");
 
 }
