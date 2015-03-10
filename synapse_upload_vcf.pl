@@ -156,7 +156,7 @@ if ($pem_conf && -e $pem_conf) {
 
 
 # Then, do the upload only for the most recent version
-while (my ($analysis_id,$metad) = each %to_be_processed) {
+META: while (my ($analysis_id,$metad) = each %to_be_processed) {
     next unless newest_workflow_version($metad);
 
     my $json  = generate_output_json($metad);
@@ -490,8 +490,9 @@ sub download_url {
         $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
         $response = run("lwp-download $url $path");
         if ($response) {
-            say "ERROR DOWNLOADING: $url";
-            exit 1;
+            say STDERR "ERROR DOWNLOADING: $url aborting this donor";
+	    next META;
+            #exit 1;
         }
     }
     return $path;
