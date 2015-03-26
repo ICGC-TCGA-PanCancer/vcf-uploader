@@ -1,0 +1,52 @@
+{
+   "used_urls" : [
+      "https://cghub.ucsc.edu/cghub/data/analysis/download/2816802d-5e8d-4a81-82bf-88f42ff92c38/PCAWG.3fa326fb-473e-49c6-888a-8774c1beed5d.bam",
+      "https://cghub.ucsc.edu/cghub/data/analysis/download/55108813-99d3-4b96-b7d4-8d23554e491c/PCAWG.ab10ec7f-7dca-4615-b5d8-8cc82ae24546.bam"
+   ],
+   "files" : [
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.snv_mnv.vcf.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.snv_mnv.vcf.gz.tbi",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.cnv.vcf.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.cnv.vcf.gz.tbi",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.sv.vcf.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.sv.vcf.gz.tbi",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.indel.vcf.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.indel.vcf.gz.tbi",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.snv_mnv.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.cnv.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.sv.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.indel.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.imputeCounts.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.binnedReadCounts.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.genotype.tar.gz",
+      "sftp://tcgaftps.nci.nih.gov/tcgapancan/variant_calling_pilot_64/OICR_Sanger_Core/5a7f3c88-ef02-4e97-8009-5622245b6a09.svcp_1-0-2.20141218.somatic.verifyBamId.tar.gz"
+   ],
+   "executed_urls" : [
+      "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_SangerPancancerCgpCnIndelSnvStr_1.0.2_SeqWare_1.1.0-alpha.5.zip",
+      "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_BWA_2.6.0_SeqWare_1.0.15.zip",
+      "https://github.com/ICGC-TCGA-PanCancer/SeqWare-CGP-SomaticCore"
+   ],
+   "wiki_content" : {
+      "title" : "TCGA/ICGC PanCancer Donor-Level Variant Calling for Participant 028e99e9-5b9a-4954-bb6e-6d4709a3cea8",
+      "description" : "This is the variant calling for specimen 9622c370-68d0-48da-a7e0-5eb4765b6f27 from donor 028e99e9-5b9a-4954-bb6e-6d4709a3cea8. The results consist of one or more VCF files plus optional tar.gz files that contain additional file types. This uses the SangerPancancerCgpCnIndelSnvStr workflow, version 1.0.2 available at https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_SangerPancancerCgpCnIndelSnvStr_1.0.2_SeqWare_1.1.0-alpha.5.zip. This workflow can be created from source, see https://github.com/ICGC-TCGA-PanCancer/SeqWare-CGP-SomaticCore. For a complete change log see https://github.com/testproject/workflow-test-cancer/blob/1.0.0/workflow-test-cancer/CHANGELOG.md. Note the 'ANALYSIS_TYPE' is 'REFERENCE_ASSEMBLY' but a better term to describe this analysis is 'SEQUENCE_VARIATION' as defined by the EGA's SRA 1.5 schema. Please note the reference used for alignment was hs37d, see ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/README_human_reference_20110707 for more information. Briefly this is the integrated reference sequence from the GRCh37 primary assembly (chromosomal plus unlocalized and unplaced contigs), the rCRS mitochondrial sequence (AC:NC_012920), Human herpesvirus 4 type 1 (AC:NC_007605) and the concatenated decoy sequences (hs37d5cs.fa.gz). Variant calls may not be present for all contigs in this reference."
+   },
+   "annotations" : {
+      "original_analysis_id" : "3fa326fb-473e-49c6-888a-8774c1beed5d,ab10ec7f-7dca-4615-b5d8-8cc82ae24546",
+      "analysis_id_normal" : "2816802d-5e8d-4a81-82bf-88f42ff92c38",
+      "workflow_url" : "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_SangerPancancerCgpCnIndelSnvStr_1.0.2_SeqWare_1.1.0-alpha.5.zip",
+      "donor_id" : "028e99e9-5b9a-4954-bb6e-6d4709a3cea8",
+      "sample_id_normal" : "2d60408f-5a74-4cd1-a27e-168d1d3379e6",
+      "alignment_workflow_name" : "Workflow_Bundle_BWA (UCSC Implementation)",
+      "sample_id_tumor" : "5a7f3c88-ef02-4e97-8009-5622245b6a09",
+      "center_name" : "UCSC",
+      "study" : "PCAWG 2.0",
+      "workflow_name" : "SangerPancancerCgpCnIndelSnvStr",
+      "alignment_workflow_version" : "2.6.0",
+      "project_code" : "LUAD-US",
+      "sequence_source" : null,
+      "workflow_version" : "1.0.2",
+      "analysis_id_tumor" : "55108813-99d3-4b96-b7d4-8d23554e491c",
+      "call_type" : "somatic",
+      "reference_build" : "GRCh37"
+   }
+}

@@ -1,12 +1,15 @@
-# README
+# Overview
 
-## Overview
+These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.   
 
-This tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  It is designed to be called as a step in a workflow or manually if needed.
+These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
-This tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
+  * [GNOS upload](#gnos-upload)
+  * [Synapse upload](#synapse-upload)
 
-## Dependencies
+
+# GNOS upload
+## Dependencies for gnos_upload_vcf.pl
 
 You can use PerlBrew (or your native package manager) to install dependencies.  For example:
 
@@ -14,7 +17,7 @@ You can use PerlBrew (or your native package manager) to install dependencies.  
 
 Or on an Ubuntu 12.04 host you would install via:
 
-    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl
+    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl 
 
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
@@ -60,7 +63,7 @@ There may be multiple somatic call file sets each with different samples IDs if,
 
 Note: the variant calling working group has specified ".tbi" rather than ".idx" as the tabix index extension. I have asked Annai to add support for ".tbi" and will update the code to standardize on this once the GNOS changes have been made.  Also, a README needs to be included in each tar.gz file to document the contents. In the pilot this was a separate README file but GNOS does not support uploading this directly and, therefore, it needs to included in the tar.gz file.
 
-## Running
+## Running gnos_upload_vcf
 
 The parameters:
 
@@ -109,6 +112,11 @@ An example for the files that have been checked in along with this code:
     --study-refname-override icgc_pancancer_vcf_test --test
 
 Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than multiple analysis records for each individual set of files.
+
+
+
+
+
 
 ## Test Data
 
@@ -199,3 +207,99 @@ The following items will need to be addressed by various parties:
 
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-113
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-114
+* 
+
+# Synapse upload
+## Dependencies for synapse_upload_vcf
+
+You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
+
+
+Make sure python dev is installed
+
+    sudo apt-get install python-dev python-pip
+
+In short use the pip command to install the python packages (use the --upgrade flag if older versions are already installed)
+
+    sudo pip install synapseclient
+    sudo pip install python-dateutil
+    sudo pip install elasticsearch
+    sudo pip install xmltodict
+    sudo pip install pysftp
+    sudo pip install paramiko
+
+In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
+
+    synapse login -u <synapse username> -p <synapse password>  --rememberMe
+
+In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
+
+    ~/.synapseConfig 
+    [sftp://tcgaftps.nci.nih.gov]
+    username = Username
+    password = password
+
+
+## Running synapse_upload_vcf
+
+The synapse upload script uses a json file with paremeters (see [example_input.json](https://github.com/ICGC-TCGA-PanCancer/vcf-uploader/blob/develop/sample_files/example_input.json) and a parentId which reprsents the folder in Synapse to upload the files to.  For example to upload the example files to DKFZ output folder:
+
+     synapse_upload_vcf --parentId syn2898426 sample_files/example_input.json
+
+to upload Sanger files but store them at a specific spot in the sftp site:
+
+     synapse_upload_vcf --parentId syn3155834 --url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants sample_files/example_input.json
+     
+## Wrapper script for synapse_upload_vcf
+
+The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
+
+    Usage: synapse_upload_vcf.pl[--metadata-url url]
+                                [--use-cached_xml]
+                                [--local-xml /path/to/local/metadata.xml -- Note: still downloads BWA metadata from GNOS]
+                                [--metadata-url-file /path/to/metadata_url_file -- a list of metadata urls]
+                                [--output-dir dir]
+                                [--xml-dir]
+                                [--pem-file file.pem]
+                                [--parent-id syn2897245]
+                                [--pem-conf conf/pem.conf]
+                                [--local-path /path/to/local/files]
+                                [--jamboree-sftp-url url of files that are ALREADY UPLOADED on the jamboree sftp server]
+      			        [--synapse-sftp-url url to which files WILL BE UPLOADED via synapse]
+                                [--download optional flag to Download files from GNOS]
+                                [--help]
+
+<b>NOTE:</b> If you are using different pem files on different servers, use either the --pem-file or --pem-conf arguments below]
+
+<b>Example: use a batch of GNOS metadata URLs, download VCF files from GNOS (batch mode)</b>
+
+    ./synapse_upload_vcf.pl --metadata-url-file sample_files/metadata_urls.txt --download 
+
+<b>Example: use a single metadata URL, download VCF files from GNOS</b>
+
+    ./synapse_upload_vcf.pl --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790 --download
+
+<b>Example: use a local metadata xml file</b>   
+
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
+
+<b>Example: use elastic search to get metadata URLs (default); provide the jamboree sftp URL for the files (no local files)
+
+    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+
+<b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
+
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml --local-path vcf/test_output_dir
+
+<b>Example: use local metadata xml and local files, specify the sftp URL for synapse to use</b>
+
+    ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml \
+    --local-path vcf/test_output_dir \
+    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+
+
+
+
+
+
+

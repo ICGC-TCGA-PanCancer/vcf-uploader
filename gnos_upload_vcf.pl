@@ -383,13 +383,9 @@ sub upload_submission {
     # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test);
 
-    my $log_file = 'upload.log';
-    my $gt_upload_command = "cd $sub_path; gtupload -v -c $key -l ./$log_file -u ./manifest.xml; cd -";
-    say "UPLOADING DATA: $cmd";
-
     unless ( $test ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $md5_sleep) );
+        return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown) );
     }
 
     # just touch this file to ensure monitoring tools know upload is complete
