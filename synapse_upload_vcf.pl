@@ -14,6 +14,8 @@ use XML::XPath;
 use XML::XPath::XMLParser;
 use JSON;
 
+use Cwd 'abs_path';
+
 use Data::Dumper;
 
 #############################################################################################
@@ -603,3 +605,4 @@ sub run {
 }
 
 1;
+
