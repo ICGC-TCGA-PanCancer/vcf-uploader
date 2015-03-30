@@ -39,15 +39,15 @@ my $milliseconds_in_an_hour = 3600000;
 # VARIABLES #
 #############
 
-# seconds to wait for a retry
-my $cooldown = 60;
+# min to wait for a retry
+# TODO: cooldown and retry should be parameterized
+my $cooldown = 1;
 # 30 retries at 60 seconds each is 30 hours
 my $retries = 30;
 # retries for md5sum, 4 hours
 my $timeout_min = 60;
 
 my $vcfs;
-my $vcf_types;
 my $md5_file = "";
 my $vcfs_idx;
 my $md5_idx_file = "";
@@ -183,20 +183,11 @@ say "SETTING UP OUTPUT DIR";
 
 my $uuid = '';
 my $ug = Data::UUID->new;
+if ($uuid eq "") {
+  $uuid = lc($ug->create_str());
+}
 
-if(-d "$output_dir") {
-    opendir( my $dh, $output_dir);
-    my @dirs = grep {-d "$output_dir/$_" && ! /^\.{1,2}$/} readdir($dh);
-    if (scalar @dirs == 1) {
-        $uuid = $dirs[0];
-    }
-    else {
-        $uuid = lc($ug->create_str());
-    }
-}
-else {
-    $uuid = lc($ug->create_str());
-}
+
 
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir/$uuid");
@@ -208,7 +199,6 @@ my $final_touch_file = $output_dir."upload_complete.txt";
 # parse values
 my @vcf_arr          = split /,/, $vcfs;
 my @md5_file_arr     = split /,/, $md5_file;
-my @vcf_types_arr    = split /,/, $vcf_types;
 my @vcfs_idx_arr     = split /,/, $vcfs_idx;
 my @md5_idx_file_arr = split /,/, $md5_idx_file;
 my @vcf_checksums;
@@ -247,7 +237,7 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
 
     foreach my $file (@files) {
         my $command = "$link_method $pwd/$file $output_dir/";
-        run($command) if (not (-e "$pwd/$output_dir/$file"));
+        run($command) if (!(-e "$pwd/$output_dir/$file"));
     }
 }
 
@@ -400,7 +390,7 @@ sub upload_submission {
 
     my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
     say "UPLOADING METADATA CMD: $cmd";
-    if ( not $test && not $skip_upload ) {
+    if ( !$test && !$skip_upload ) {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
         return 1 if ( run($cmd) );
     }
@@ -408,12 +398,14 @@ sub upload_submission {
     # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
+    #TODO: Log file might not be needed if Adam's library is doing it as well.
     my $log_file = 'upload.log';
     my $gt_upload_command = "cd $sub_path; gtupload -v -c $key -l ./$log_file -u ./manifest.xml; cd -";
     say "UPLOADING DATA CMD: $gt_upload_command LOG: $sub_path/$log_file";
 
     unless ( $test || $skip_upload ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
+        # TODO: compare to new version of library and use correct interface
         return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $timeout_min) );
     }
 
