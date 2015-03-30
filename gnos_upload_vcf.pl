@@ -398,14 +398,13 @@ sub upload_submission {
     # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
-    #TODO: Log file might not be needed if Adam's library is doing it as well.
-    my $log_file = 'upload.log';
+    #It looks like gt-download-upload-wrapper is doing the logging now.
+    #my $log_file = 'upload.log';
     my $gt_upload_command = "cd $sub_path; gtupload -v -c $key -l ./$log_file -u ./manifest.xml; cd -";
-    say "UPLOADING DATA CMD: $gt_upload_command LOG: $sub_path/$log_file";
+    #say "UPLOADING DATA CMD: $gt_upload_command LOG: $sub_path/$log_file";
 
     unless ( $test || $skip_upload ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        # TODO: compare to new version of library and use correct interface
         return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path/$log_file", $retries, $cooldown, $timeout_min) );
     }
 
