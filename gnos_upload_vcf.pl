@@ -408,7 +408,7 @@ sub upload_submission {
 
     unless ( $test || $skip_upload ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-        return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path", $retries, $cooldown, $timeout_min) );
+        return 1 if ( GNOS::Upload->run_upload($gt_upload_command, "$sub_path", $retries, $cooldown, $timeout_min, $key) );
     }
 
     # now make an archive tarball if requested
