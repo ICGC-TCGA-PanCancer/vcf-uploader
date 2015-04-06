@@ -14,6 +14,8 @@ use XML::XPath;
 use XML::XPath::XMLParser;
 use JSON;
 
+use Cwd 'abs_path';
+
 use Data::Dumper;
 
 #############################################################################################
@@ -41,6 +43,8 @@ use constant jamboree_sftp_url  => 'sftp://tcgaftps.nci.nih.gov/tcgapancan/panca
 #############
 # VARIABLES #
 #############
+
+# NOTE: This is a pre-production version. DO NOT USE FOR PRODUCTION!
 
 my $parser        = new XML::DOM::Parser;
 my $output_dir    = output_dir;
@@ -603,3 +607,4 @@ sub run {
 }
 
 1;
+
