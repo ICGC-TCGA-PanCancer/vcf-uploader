@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-use warnings;
+# TODO: Adam, turn this back on after you've address the source of the warnings. It makes it impossible to see the output of the program otherwise
+# use warnings;
 use strict;
 
 use feature qw(say);
