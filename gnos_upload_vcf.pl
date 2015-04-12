@@ -232,8 +232,10 @@ chomp $pwd;
 
 for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     my $vcf_check = `cat $md5_file_arr[$i]`;
+    $vcf_check =~ s/^\s+|\s+$//g;
     say "CAT CODE! cat $md5_file_arr[$i]";
     my $idx_check = `cat $md5_idx_file_arr[$i]`;
+    $idx_check =~ s/^\s+|\s+$//g;
     chomp $vcf_check;
     chomp $idx_check;
     push @vcf_checksums, $vcf_check;
@@ -255,6 +257,7 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
 for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
     my $tarball_check = `cat $md5_tarball_file_arr[$i]`;
     chomp $tarball_check;
+    $tarball_check =~ s/^\s+|\s+$//g;
     push @tarball_checksums, $tarball_check;
     my $tarball_file = $tarball_arr[$i];
     my @t = split /\//, $tarball_arr[$i];
