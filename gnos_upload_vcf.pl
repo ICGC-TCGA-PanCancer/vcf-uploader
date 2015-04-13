@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-use warnings;
+# TODO: Adam, turn this back on after you've address the source of the warnings. It makes it impossible to see the output of the program otherwise
+# use warnings;
 use strict;
 
 use feature qw(say);
@@ -109,7 +110,7 @@ if ( scalar(@ARGV) < 20 || scalar(@ARGV) > 69 ) {
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
-       [--timeout-min <20>] 
+       [--timeout-min <20>]
        [--retries <3>]
        [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
        [--workflow-src-url <http://... the source repo>]
@@ -187,7 +188,6 @@ GetOptions(
 # setup output dir
 say "SETTING UP OUTPUT DIR";
 
-my $uuid = '';
 my $ug = Data::UUID->new;
 if ($uuid eq "") {
   $uuid = lc($ug->create_str());
@@ -232,8 +232,10 @@ chomp $pwd;
 
 for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     my $vcf_check = `cat $md5_file_arr[$i]`;
+    $vcf_check =~ s/^\s+|\s+$//g;
     say "CAT CODE! cat $md5_file_arr[$i]";
     my $idx_check = `cat $md5_idx_file_arr[$i]`;
+    $idx_check =~ s/^\s+|\s+$//g;
     chomp $vcf_check;
     chomp $idx_check;
     push @vcf_checksums, $vcf_check;
@@ -242,16 +244,29 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     my @files = ($vcf_arr[$i], $md5_file_arr[$i], $vcfs_idx_arr[$i], $md5_idx_file_arr[$i]);
 
     foreach my $file (@files) {
-        my $command = "$link_method $pwd/$file $output_dir/";
-        run($command) if (!(-e "$pwd/$output_dir/$file"));
+        my @t = split /\//, $file;
+        my $root = $t[scalar(@t)-1];
+        my $command = "$link_method `readlink -f $file` $output_dir/";
+        print "ROOT: $root\n";
+        if (!(-e "$output_dir/$root")) {
+          run($command);
+        }
     }
 }
 
 for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
     my $tarball_check = `cat $md5_tarball_file_arr[$i]`;
     chomp $tarball_check;
+    $tarball_check =~ s/^\s+|\s+$//g;
     push @tarball_checksums, $tarball_check;
-    run("$link_method $pwd/$tarball_arr[$i] $output_dir/");
+    my $tarball_file = $tarball_arr[$i];
+    my @t = split /\//, $tarball_arr[$i];
+    my $root = $t[scalar(@t)-1];
+    my $command = "$link_method `readlink -f $tarball_file` $output_dir/";
+    print "ROOT: $root\n";
+    if (!(-e "$output_dir/$root")) {
+      run($command);
+    }
 }
 
 say 'DOWNLOADING METADATA FILES';
@@ -788,10 +803,14 @@ END
 
     # VCF files
     for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
-        $vcf_arr[$i] =~ /^\S*\/([^\/]+)$/;
-        my $curr_vcf = $1;
-        $vcfs_idx_arr[$i] =~ /^\S*\/([^\/]+)$/;
-        my $curr_index = $1;
+        my $curr_vcf = $vcf_arr[$i];
+        if($vcf_arr[$i] =~ /^\S*\/([^\/]+)$/) {
+          $curr_vcf = $1;
+        }
+        my $curr_index = $vcfs_idx_arr[$i];
+        if($vcfs_idx_arr[$i] =~ /^\S*\/([^\/]+)$/) {
+          $curr_index = $1;
+        }
         $analysis_xml .=
 "          <FILE filename=\"$curr_vcf\" filetype=\"vcf\" checksum_method=\"MD5\" checksum=\"$vcf_checksums[$i]\" />\n";
         $analysis_xml .=
@@ -800,8 +819,10 @@ END
 
     # Tarball files
     for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
-        $tarball_arr[$i] =~ /^\S*\/([^\/]+)$/;
-        my $curr_tar = $1;
+        my $curr_tar = $tarball_arr[$i];
+        if ($tarball_arr[$i] =~ /^\S*\/([^\/]+)$/) {
+          $curr_tar = $1;
+        }
         $analysis_xml .=
 "          <FILE filename=\"$curr_tar\" filetype=\"tar\" checksum_method=\"MD5\" checksum=\"$tarball_checksums[$i]\" />\n";
     }
@@ -1303,4 +1324,3 @@ sub run {
 }
 
 0;
-
