@@ -75,8 +75,7 @@ my $workflow_url =
 "https://s3.amazonaws.com/oicr.workflow.bundles/released-bundles/Workflow_Bundle_Test_Cancer_Variant_Analysis_"
   . $workflow_version
   . "_SeqWare_$seqware_version.zip";
-my $changelog_url =
-"https://github.com/testproject/workflow-test-cancer/blob/$workflow_version/workflow-test-cancer/CHANGELOG.md";
+my $changelog_url = "CHANGELOG.md";
 my $force_copy      = 0;
 my $study_ref_name  = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
