@@ -34,8 +34,6 @@ my $milliseconds_in_an_hour = 3600000;
 # Also see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0        #
 #############################################################################################
 
-# LEFT OFF WITH: working on pipeline JSON
-
 #############
 # VARIABLES #
 #############
@@ -47,12 +45,12 @@ my $retries = 3;
 # retries timeout in min
 my $timeout_min = 20;
 
-my $vcfs;
+my $vcfs = "";
 my $md5_file = "";
-my $vcfs_idx;
+my $vcfs_idx = "";
 my $md5_idx_file = "";
-my $tarballs;
-my $md5_tarball_file;
+my $tarballs = "";
+my $md5_tarball_file = "";
 
 # TODO: Sheldon, we will need parameters to the program for the various hard-coded bits below
 my $parser        = new XML::DOM::Parser;
@@ -81,8 +79,8 @@ my $study_ref_name  = "icgc_pancancer_vcf";
 my $analysis_center = "OICR";
 my $center_override = "";
 my $refcenter_override = "";
-my $metadata_url;
-my $metadata_paths;
+my $metadata_url       = "";
+my $metadata_paths     = "";
 my $make_runxml        = 0;
 my $make_expxml        = 0;
 my $description_file   = "";
@@ -97,18 +95,18 @@ my $vm_instance_mem_gb = "unknown";
 my $vm_location_code   = "unknown";
 
 # TODO: check the argument counts here
-if ( scalar(@ARGV) < 20 || scalar(@ARGV) > 69 ) {
+if ( scalar(@ARGV) < 16 || scalar(@ARGV) > 70 ) {
     die "USAGE: 'perl gnos_upload_vcf.pl
        --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
        --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
        --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
        --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
        --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
-       --tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>
-       --tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>
        --outdir <output_dir>
        --key <gnos.pem>
        --upload-url <gnos_server_url>
+       [--tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>]
+       [--tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>]
        [--timeout-min <20>]
        [--retries <3>]
        [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
@@ -141,7 +139,7 @@ if ( scalar(@ARGV) < 20 || scalar(@ARGV) > 69 ) {
 
 GetOptions(
     "metadata-urls=s"            => \$metadata_url,
-    "metadata-paths=s"            => \$metadata_paths,
+    "metadata-paths=s"           => \$metadata_paths,
     "vcfs=s"                     => \$vcfs,
     "vcf-md5sum-files=s"         => \$md5_file,
     "vcf-idxs=s"                 => \$vcfs_idx,
