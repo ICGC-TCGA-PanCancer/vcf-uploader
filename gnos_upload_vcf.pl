@@ -93,48 +93,11 @@ my $vm_instance_type   = "unknown";
 my $vm_instance_cores  = "unknown";
 my $vm_instance_mem_gb = "unknown";
 my $vm_location_code   = "unknown";
+my $help = 0;
 
 # TODO: check the argument counts here
-if ( scalar(@ARGV) < 16 || scalar(@ARGV) > 70 ) {
-    die "USAGE: 'perl gnos_upload_vcf.pl
-       --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
-       --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
-       --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
-       --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
-       --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
-       --outdir <output_dir>
-       --key <gnos.pem>
-       --upload-url <gnos_server_url>
-       [--tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>]
-       [--tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>]
-       [--timeout-min <20>]
-       [--retries <3>]
-       [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
-       [--workflow-src-url <http://... the source repo>]
-       [--workflow-url <http://... the packaged SeqWare Zip>]
-       [--workflow-name <workflow_name>]
-       [--workflow-version <workflow_version>]
-       [--seqware-version <seqware_version_workflow_compiled_with>]
-       [--description-file <file_path_for_description_txt>]
-       [--study-refname-override <study_refname_override>]
-       [--center-override <center_override>]
-       [--ref-center-override <center_override>]
-       [--analysis-center-override <analysis_center_override>]
-       [--pipeline-json <pipeline_json_file>]
-       [--qc-metrics-json <qc_metrics_json_file>]
-       [--timing-metrics-json <timing_metrics_json_file>]
-       [--make-runxml]
-       [--make-expxml]
-       [--force-copy]
-       [--skip-validate]
-       [--skip-upload]
-       [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
-       [--vm-instance-type <vmInstanceType>]
-       [--vm-instance-cores <vmInstanceCores>]
-       [--vm-instance-mem-gb <vmInstanceMemGb>]
-       [--vm-location-code <vmLocationCode>]
-       [--uuid <uuis_for_use_as_upload_analysis_id>]
-       [--test]\n";
+if ( scalar(@ARGV) == 0 ) {
+    die get_usage();
 }
 
 GetOptions(
@@ -176,7 +139,13 @@ GetOptions(
     "uuid=s"                     => \$uuid,
     "timeout-min=i"              => \$timeout_min,
     "retries=i"                  => \$retries,
+    "help"                       => \$help,
 );
+
+# if --help
+if ($help) {
+  die get_usage();
+}
 
 ##############
 # MAIN STEPS #
@@ -185,19 +154,17 @@ GetOptions(
 # setup output dir
 say "SETTING UP OUTPUT DIR";
 
+# creating a new UUID if not specified
 my $ug = Data::UUID->new;
 if ($uuid eq "") {
   $uuid = lc($ug->create_str());
 }
 
-
-
+# output dir setup
 $output_dir = "vcf/$output_dir";
 run("mkdir -p $output_dir/$uuid");
 $output_dir = "$output_dir/$uuid/";
 my $final_touch_file = $output_dir."upload_complete.txt";
-
-
 
 # parse values
 my @vcf_arr          = split /,/, $vcfs;
@@ -212,21 +179,18 @@ my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 
 # TODO: Sheldon, we'll need more validation here, check each VCF file for headers etc. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 say 'VALIDATING PARAMS';
-
+die "Must specify at least one VCF or one Tarball!\n"     if (scalar(@tarball_arr) == 0 && scalar(@vcf_arr) == 0);
 die "VCF and VCF md5sum file count don't match!\n"        if ( scalar(@vcf_arr) != scalar(@md5_file_arr) );
 die "VCF and VCF index count don't match!\n"              if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) );
 die "VCF index and VCF index md5sum count don't match!\n" if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) );
 die "Tarball and Tarball md5sum count don't match!\n"     if ( scalar(@tarball_arr) != scalar(@md5_tarball_file_arr) );
 
-
 say 'COPYING FILES TO OUTPUT DIR';
-
-
 my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
 my $pwd = `pwd`;
 chomp $pwd;
 
-
+# loop for each VCF file
 for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     my $vcf_check = `cat $md5_file_arr[$i]`;
     $vcf_check =~ s/^\s+|\s+$//g;
@@ -251,6 +215,7 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     }
 }
 
+# loop for each tarball
 for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
     my $tarball_check = `cat $md5_tarball_file_arr[$i]`;
     chomp $tarball_check;
@@ -285,6 +250,54 @@ die "The upload of files did not work!  Files are located at: $sub_path\n"
 ###############
 # SUBROUTINES #
 ###############
+
+sub get_usage {
+  return "USAGE: 'perl gnos_upload_vcf.pl
+     --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
+     --outdir <output_dir>
+     --key <gnos.pem>
+     --upload-url <gnos_server_url>
+     # you must specify --vcfs, --vcf-md5sum-files, --vcf-idxs, and --vcf-idx-md5sum-files AND/OR --tarballs or --tarball-md5sum-files
+     [--vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>]
+     [--vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>]
+     [--vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>]
+     [--vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>]
+     # and/or
+     [--tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>]
+     [--tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>]
+     # these are optional but highly recommended
+     [--workflow-src-url <http://... the source repo>]
+     [--workflow-url <http://... the packaged SeqWare Zip>]
+     [--workflow-name <workflow_name>]
+     [--workflow-version <workflow_version>]
+     [--vm-instance-type <vmInstanceType>]
+     [--vm-instance-cores <vmInstanceCores>]
+     [--vm-instance-mem-gb <vmInstanceMemGb>]
+     [--vm-location-code <vmLocationCode>]
+     # these are optional but required if using local file mode and not GNOS for metadata
+     [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
+     # the rest are optional
+     [--timeout-min <20>]
+     [--retries <3>]
+     [--seqware-version <seqware_version_workflow_compiled_with>]
+     [--description-file <file_path_for_description_txt>]
+     [--study-refname-override <study_refname_override>]
+     [--center-override <center_override>]
+     [--ref-center-override <center_override>]
+     [--analysis-center-override <analysis_center_override>]
+     [--pipeline-json <pipeline_json_file>]
+     [--qc-metrics-json <qc_metrics_json_file>]
+     [--timing-metrics-json <timing_metrics_json_file>]
+     [--make-runxml]
+     [--make-expxml]
+     [--force-copy]
+     [--skip-validate]
+     [--skip-upload]
+     [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
+     [--uuid <uuis_for_use_as_upload_analysis_id>]
+     [--test]
+     \n"
+}
 
 # this method generates a nice summary of the inputs to this workflow
 # for inclusion in the analysis.xml
