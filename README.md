@@ -12,9 +12,11 @@ These tool needs to produce VCF uploads that conform to the PanCancer VCF upload
 You can find these tools pre-installed in a docker container, see [pancancer_upload_download](https://github.com/ICGC-TCGA-PanCancer/pancancer_upload_download).
 
 # GNOS upload
+
 ## Dependencies for gnos_upload_vcf.pl
 
-You can use PerlBrew (or your native package manager) to install dependencies.  For example:
+If you are using the Docker version everything will be setup for you.  If not, you
+ can use PerlBrew (or your native package manager) to install dependencies.  For example:
 
     cpanm XML::DOM XML::XPath XML::XPath::XMLParser JSON Data::UUID XML::LibXML Time::Piece
 
@@ -26,7 +28,7 @@ Once these are installed you can execute the script with the command below. For 
 
 You also need the gtdownload/gtuplod/cgsubmit tools installed.  These are available on the CGHub site and are only available for Linux (for the submission tools).
 
-TODO: Sheldon, you'll want to have a dependency on VCF validation tool(s).
+Finally, this tool uses the [GNOS upload/download wrapper library](https://github.com/ICGC-TCGA-PanCancer/gt-download-upload-wrapper) written by Adam Wright.
 
 ## Inputs
 
@@ -116,11 +118,6 @@ An example for the files that have been checked in along with this code:
 
 Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than multiple analysis records for each individual set of files.
 
-
-
-
-
-
 ## Test Data
 
 The sample command above is using the Donor ICGC_0437 as an example:
@@ -196,23 +193,14 @@ For the TCGA samples (which are most of the 60) this should be “tcga_pancancer
 ## To Do
 
 * removed hard coded XML files and replace with Template Toolkit templates (or something similar)
-* need to add support for runtime and qc information files in a generic way (JSON file?)
-* support for ".tbi" extensions rather than ".idx" (GNOS issue, would have be resolved by Annai on each GNOS server)
 * validation needs to be implemented:
     * need to make sure each file conforms to the naming convention
     * need to ensure the headers (and contents) of VCF conform to the upload SOP, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
     * need to run the VCF files through VCFTools validation
 * if not provided as files/params, compute the md5sums for the submitted files
 
-## Bugs
-
-The following items will need to be addressed by various parties:
-
-* Annai: https://jira.oicr.on.ca/browse/PANCANCER-113
-* Annai: https://jira.oicr.on.ca/browse/PANCANCER-114
-*
-
 # Synapse upload
+
 ## Dependencies for synapse_upload_vcf
 
 You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide
