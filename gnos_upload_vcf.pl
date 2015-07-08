@@ -188,6 +188,7 @@ die "VCF and VCF md5sum file count don't match!\n"        if ( scalar(@vcf_arr) 
 die "VCF and VCF index count don't match!\n"              if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) );
 die "VCF index and VCF index md5sum count don't match!\n" if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) );
 die "Tarball and Tarball md5sum count don't match!\n"     if ( scalar(@tarball_arr) != scalar(@md5_tarball_file_arr) );
+die "Keyfile $key not found!\n"                           if (!-e $key);
 
 say 'COPYING FILES TO OUTPUT DIR';
 my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
