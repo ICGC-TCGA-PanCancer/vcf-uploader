@@ -104,7 +104,7 @@ The parameters:
 An example for the files that have been checked in along with this code:
 
     cd sample_files
-    perl ../gnos_upload_vcf.pl \
+    perl -I ../../gt-download-upload-wrapper/lib ../gnos_upload_vcf.pl \
     --metadata-urls https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e,https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087 \
     --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz,914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.indel.vcf.gz,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.snv_mnv.vcf.gz \
     --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.md5,914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz.md5,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.indel.vcf.gz.md5,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.snv_mnv.vcf.gz.md5 \
