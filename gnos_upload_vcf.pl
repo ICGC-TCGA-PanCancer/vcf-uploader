@@ -94,6 +94,8 @@ my $vm_instance_cores  = "unknown";
 my $vm_instance_mem_gb = "unknown";
 my $vm_location_code   = "unknown";
 my $help = 0;
+my $workflow_file_subset = "";
+my $related_file_subset_uuids = "";
 
 # TODO: check the argument counts here
 if ( scalar(@ARGV) == 0 ) {
@@ -140,6 +142,8 @@ GetOptions(
     "timeout-min=i"              => \$timeout_min,
     "retries=i"                  => \$retries,
     "help"                       => \$help,
+    "workflow-file-subset=s"     => \$workflow_file_subset,
+    "related-file-subset-uuids=s" => \$related_file_subset_uuids,
 );
 
 # if --help
@@ -274,6 +278,9 @@ sub get_usage {
      [--vm-instance-cores <vmInstanceCores>]
      [--vm-instance-mem-gb <vmInstanceMemGb>]
      [--vm-location-code <vmLocationCode>]
+     # these are optional but used to link two or more distinct GNOS uploads for a given workflow (typically a workflow does a single upload to GNOS at the end but some divide the upload into multiple GNOS submissions)
+     [--workflow-file-subset <name_that_describes_this_subset_of_files_from_the_workflow_chosen_by_workflow_author>]
+     [--related-file-subset-uuids <comma_delimited_list_of_GNOS_analysis_uuids_of_the_other_uploads_related_to_this_upload_used_when_a_workflow_performs_multiple_gnos_uploads_and_wants_to_related_them_explicitly>]
      # these are optional but required if using local file mode and not GNOS for metadata
      [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
      # the rest are optional
@@ -952,6 +959,21 @@ END
           <VALUE>$workflow_url</VALUE>
         </ANALYSIS_ATTRIBUTE>
 ";
+
+    # attributes linking multiple uploads for a single workflow together
+    if ($workflow_file_subset ne "") {
+      $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
+            <TAG>workflow_file_subset</TAG>
+            <VALUE>$workflow_file_subset</VALUE>
+          </ANALYSIS_ATTRIBUTE>
+          ";
+    }
+    if () {
+
+    }
+
+    my = "";
+    my $related_file_subset_uuids = "";
 
     # some metadata about this vm
     $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
