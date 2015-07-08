@@ -968,12 +968,13 @@ END
           </ANALYSIS_ATTRIBUTE>
           ";
     }
-    if () {
-
+    if ($related_file_subset_uuids ne "") {
+      $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
+            <TAG>related_file_subset_uuids</TAG>
+            <VALUE>$related_file_subset_uuids</VALUE>
+          </ANALYSIS_ATTRIBUTE>
+          ";
     }
-
-    my = "";
-    my $related_file_subset_uuids = "";
 
     # some metadata about this vm
     $analysis_xml .= "        <ANALYSIS_ATTRIBUTE>
