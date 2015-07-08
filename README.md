@@ -1,12 +1,15 @@
 # Overview
 
-These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.   
+These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.
 
 These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
   * [GNOS upload](#gnos-upload)
   * [Synapse upload](#synapse-upload)
 
+## Availability
+
+You can find these tools pre-installed in a docker container, see [pancancer_upload_download](https://github.com/ICGC-TCGA-PanCancer/pancancer_upload_download).
 
 # GNOS upload
 ## Dependencies for gnos_upload_vcf.pl
@@ -17,7 +20,7 @@ You can use PerlBrew (or your native package manager) to install dependencies.  
 
 Or on an Ubuntu 12.04 host you would install via:
 
-    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl 
+    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl
 
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
@@ -207,12 +210,12 @@ The following items will need to be addressed by various parties:
 
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-113
 * Annai: https://jira.oicr.on.ca/browse/PANCANCER-114
-* 
+*
 
 # Synapse upload
 ## Dependencies for synapse_upload_vcf
 
-You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
+You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide
 
 
 Make sure python dev is installed
@@ -228,13 +231,13 @@ In short use the pip command to install the python packages (use the --upgrade f
     sudo pip install pysftp
     sudo pip install paramiko
 
-In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
+In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing
 
     synapse login -u <synapse username> -p <synapse password>  --rememberMe
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
 
-    ~/.synapseConfig 
+    ~/.synapseConfig
     [sftp://tcgaftps.nci.nih.gov]
     username = Username
     password = password
@@ -249,7 +252,7 @@ The synapse upload script uses a json file with paremeters (see [example_input.j
 to upload Sanger files but store them at a specific spot in the sftp site:
 
      synapse_upload_vcf --parentId syn3155834 --url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants sample_files/example_input.json
-     
+
 ## Wrapper script for synapse_upload_vcf
 
 The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
@@ -273,19 +276,19 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
 <b>Example: use a batch of GNOS metadata URLs, download VCF files from GNOS (batch mode)</b>
 
-    ./synapse_upload_vcf.pl --metadata-url-file sample_files/metadata_urls.txt --download 
+    ./synapse_upload_vcf.pl --metadata-url-file sample_files/metadata_urls.txt --download
 
 <b>Example: use a single metadata URL, download VCF files from GNOS</b>
 
     ./synapse_upload_vcf.pl --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790 --download
 
-<b>Example: use a local metadata xml file</b>   
+<b>Example: use a local metadata xml file</b>
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
 
 <b>Example: use elastic search to get metadata URLs (default); provide the jamboree sftp URL for the files (no local files)
 
-    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01
 
 <b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
 
@@ -295,11 +298,4 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml \
     --local-path vcf/test_output_dir \
-    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
-
-
-
-
-
-
-
+    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01
