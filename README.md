@@ -1,29 +1,34 @@
 # Overview
 
-These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.   
+These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.
 
 These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
   * [GNOS upload](#gnos-upload)
   * [Synapse upload](#synapse-upload)
 
+## Availability
+
+You can find these tools pre-installed in a docker container, see [pancancer_upload_download](https://github.com/ICGC-TCGA-PanCancer/pancancer_upload_download).
 
 # GNOS upload
+
 ## Dependencies for gnos_upload_vcf.pl
 
-You can use PerlBrew (or your native package manager) to install dependencies.  For example:
+If you are using the Docker version everything will be setup for you.  If not, you
+ can use PerlBrew (or your native package manager) to install dependencies.  For example:
 
     cpanm XML::DOM XML::XPath XML::XPath::XMLParser JSON Data::UUID XML::LibXML Time::Piece
 
 Or on an Ubuntu 12.04 host you would install via:
 
-    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl 
+    sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl
 
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
 
 You also need the gtdownload/gtuplod/cgsubmit tools installed.  These are available on the CGHub site and are only available for Linux (for the submission tools).
 
-TODO: Sheldon, you'll want to have a dependency on VCF validation tool(s).
+Finally, this tool uses the [GNOS upload/download wrapper library](https://github.com/ICGC-TCGA-PanCancer/gt-download-upload-wrapper) written by Adam Wright.
 
 ## Inputs
 
@@ -67,39 +72,58 @@ Note: the variant calling working group has specified ".tbi" rather than ".idx" 
 
 The parameters:
 
-    perl gnos_upload_vcf.pl
-       --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
-       --vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>
-       --vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>
-       --vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>
-       --vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>
-       --tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>
-       --tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>
-       --outdir <output_dir>
-       --key <gnos.pem>
-       --upload-url <gnos_server_url>
-       [--workflow-src-url <http://... the source repo>]
-       [--workflow-url <http://... the packaged SeqWare Zip>]
-       [--workflow-name <workflow_name>]
-       [--workflow-version <workflow_version>]
-       [--seqware-version <seqware_version_workflow_compiled_with>]
-       [--description-file <file_path_for_description_txt>]
-       [--study-refname-override <study_refname_override>]
-       [--analysis-center-override <analysis_center_override>]
-       [--pipeline-json <pipeline_json_file>]
-       [--qc-metrics-json <qc_metrics_json_file>]
-       [--timing-metrics-json <timing_metrics_json_file>]
-       [--make-runxml]
-       [--make-expxml]
-       [--force-copy]
-       [--skip-validate]
-       [--skip-upload]
-       [--test]
+    USAGE: 'perl gnos_upload_vcf.pl
+     --metadata-urls <URLs_for_specimen-level_aligned_BAM_input_comma_sep>
+     --outdir <output_dir>
+     --key <gnos.pem>
+     --upload-url <gnos_server_url>
+     # you must specify --vcfs, --vcf-md5sum-files, --vcf-idxs, and --vcf-idx-md5sum-files AND/OR --tarballs or --tarball-md5sum-files
+     [--vcfs <sample-level_vcf_file_path_comma_sep_if_multiple>]
+     [--vcf-md5sum-files <file_with_vcf_md5sum_comma_sep_same_order_as_vcfs>]
+     [--vcf-idxs <sample-level_vcf_idx_file_path_comma_sep_if_multiple>]
+     [--vcf-idx-md5sum-files <file_with_vcf_idx_md5sum_comma_sep_same_order_as_vcfs>]
+     # and/or
+     [--tarballs <tar.gz_non-vcf_files_comma_sep_if_multiple>]
+     [--tarball-md5sum-files <file_with_tarball_md5sum_comma_sep_same_order_as_tarball>]
+     # these are optional but highly recommended
+     [--workflow-src-url <http://... the source repo>]
+     [--workflow-url <http://... the packaged SeqWare Zip>]
+     [--workflow-name <workflow_name>]
+     [--workflow-version <workflow_version>]
+     [--vm-instance-type <vmInstanceType>]
+     [--vm-instance-cores <vmInstanceCores>]
+     [--vm-instance-mem-gb <vmInstanceMemGb>]
+     [--vm-location-code <vmLocationCode>]
+     # these are optional but used to link two or more distinct GNOS uploads for a given workflow (typically a workflow does a single upload to GNOS at the end but some divide the upload into multiple GNOS submissions)
+     [--workflow-file-subset <name_that_describes_this_subset_of_files_from_the_workflow_chosen_by_workflow_author>]
+     [--related-file-subset-uuids <comma_delimited_list_of_GNOS_analysis_uuids_of_the_other_uploads_related_to_this_upload_used_when_a_workflow_performs_multiple_gnos_uploads_and_wants_to_related_them_explicitly>]
+     # these are optional but required if using local file mode and not GNOS for metadata
+     [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
+     # the rest are optional
+     [--timeout-min <20>]
+     [--retries <3>]
+     [--seqware-version <seqware_version_workflow_compiled_with>]
+     [--description-file <file_path_for_description_txt>]
+     [--study-refname-override <study_refname_override>]
+     [--center-override <center_override>]
+     [--ref-center-override <center_override>]
+     [--analysis-center-override <analysis_center_override>]
+     [--pipeline-json <pipeline_json_file>]
+     [--qc-metrics-json <qc_metrics_json_file>]
+     [--timing-metrics-json <timing_metrics_json_file>]
+     [--make-runxml]
+     [--make-expxml]
+     [--force-copy]
+     [--skip-validate]
+     [--skip-upload]
+     [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
+     [--uuid <uuis_for_use_as_upload_analysis_id>]
+     [--test]
 
 An example for the files that have been checked in along with this code:
 
     cd sample_files
-    perl ../gnos_upload_vcf.pl \
+    perl -I ../../gt-download-upload-wrapper/lib ../gnos_upload_vcf.pl \
     --metadata-urls https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/d1747d83-f0be-4eb1-859b-80985421a38e,https://gtrepo-osdc-icgc.annailabs.com/cghub/metadata/analysisFull/97146325-910b-48ae-8f4d-c2ae976b3087 \
     --vcfs 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz,914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.indel.vcf.gz,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.snv_mnv.vcf.gz \
     --vcf-md5sum-files 914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.snv_mnv.vcf.gz.md5,914ee592-e855-43d3-8767-a96eb6d1f067.TestWorkflow_1-0-0.20141009.germline.indel.vcf.gz.md5,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.indel.vcf.gz.md5,a4beedc3-0e96-4e1c-90b4-3674dfc01786.TestWorkflow_1-0-0.20141009.somatic.snv_mnv.vcf.gz.md5 \
@@ -112,11 +136,6 @@ An example for the files that have been checked in along with this code:
     --study-refname-override icgc_pancancer_vcf_test --test
 
 Something to note from the above, you cloud run the uploader multiple times with different sets of files (germline, somatic, etc). We want to avoid that for variant calling workflows for the simple reason that a single record in GNOS is much easier to understand than multiple analysis records for each individual set of files.
-
-
-
-
-
 
 ## Test Data
 
@@ -193,26 +212,17 @@ For the TCGA samples (which are most of the 60) this should be “tcga_pancancer
 ## To Do
 
 * removed hard coded XML files and replace with Template Toolkit templates (or something similar)
-* need to add support for runtime and qc information files in a generic way (JSON file?)
-* support for ".tbi" extensions rather than ".idx" (GNOS issue, would have be resolved by Annai on each GNOS server)
 * validation needs to be implemented:
     * need to make sure each file conforms to the naming convention
     * need to ensure the headers (and contents) of VCF conform to the upload SOP, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
     * need to run the VCF files through VCFTools validation
 * if not provided as files/params, compute the md5sums for the submitted files
 
-## Bugs
-
-The following items will need to be addressed by various parties:
-
-* Annai: https://jira.oicr.on.ca/browse/PANCANCER-113
-* Annai: https://jira.oicr.on.ca/browse/PANCANCER-114
-* 
-
 # Synapse upload
+
 ## Dependencies for synapse_upload_vcf
 
-You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide 
+You will need to have the Python synapseclient installed.  Details for installing and setting up credentials is described in the research guide (under "How to Get Access to Synapse") see: https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+Researcher%27s+Guide
 
 
 Make sure python dev is installed
@@ -228,13 +238,13 @@ In short use the pip command to install the python packages (use the --upgrade f
     sudo pip install pysftp
     sudo pip install paramiko
 
-In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing 
+In addition it helps to add your credentials so that you don't have to rewrite your username/password.  This can be done (only needs to be done once) by typing
 
     synapse login -u <synapse username> -p <synapse password>  --rememberMe
 
 In additon you can cache your jamboree credentials by adding them to a config file (see above research guide)
 
-    ~/.synapseConfig 
+    ~/.synapseConfig
     [sftp://tcgaftps.nci.nih.gov]
     username = Username
     password = password
@@ -249,7 +259,7 @@ The synapse upload script uses a json file with paremeters (see [example_input.j
 to upload Sanger files but store them at a specific spot in the sftp site:
 
      synapse_upload_vcf --parentId syn3155834 --url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants sample_files/example_input.json
-     
+
 ## Wrapper script for synapse_upload_vcf
 
 The use case for bulk uploading to synapse is that the files and metadata are in GNOS and not locally stored.  The perl script synapse_upload_vcf.pl will use elastic search to get the metadata URLs, inititally for the pilot set, grab the metadata from GNOS, download all of the analysis files, then stage the upload to synapse.  The JSON files are stored locally. Running synapse_upload_vcf (as above) is handled by synapse_upload_vcf.pl.  One oustanding issue is that it is not clear where the parentID should be coming from.  synapse_upload_vcf.pl can also be run with a single metadata URL.
@@ -273,19 +283,19 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
 <b>Example: use a batch of GNOS metadata URLs, download VCF files from GNOS (batch mode)</b>
 
-    ./synapse_upload_vcf.pl --metadata-url-file sample_files/metadata_urls.txt --download 
+    ./synapse_upload_vcf.pl --metadata-url-file sample_files/metadata_urls.txt --download
 
 <b>Example: use a single metadata URL, download VCF files from GNOS</b>
 
     ./synapse_upload_vcf.pl --metadata-url https://gtrepo-osdc-tcga.annailabs.com/cghub/metadata/analysisFull/ee33425e-4384-4245-9d59-ea96d899e790 --download
 
-<b>Example: use a local metadata xml file</b>   
+<b>Example: use a local metadata xml file</b>
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml
 
 <b>Example: use elastic search to get metadata URLs (default); provide the jamboree sftp URL for the files (no local files)
 
-    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
+    ./synapse_upload_vcf.pl --jamboree-sftp-url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01
 
 <b>Example: use a local metadata xml file; upload vcf files to synapse using a local file path</b>
 
@@ -295,11 +305,4 @@ The use case for bulk uploading to synapse is that the files and metadata are in
 
     ./synapse_upload_vcf.pl --local-xml xml/data_ee33425e-4384-4245-9d59-ea96d899e790.xml \
     --local-path vcf/test_output_dir \
-    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01 
-
-
-
-
-
-
-
+    --synapse_sftp_url sftp://tcgaftps.nci.nih.gov/tcgapancan/pancan/Sanger_workflow_variants/batch01
