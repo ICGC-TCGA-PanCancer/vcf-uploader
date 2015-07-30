@@ -5,6 +5,7 @@
   * --rate-limit-mbytes <gtdownload_default>
   * --k-timeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>
 * Previously the values were hard coded to: 4, 200, and 60 respectively, if you want to match the old behavior you must specify these values otherwise the defaults for gtdownload will be used, see [here](https://cghub.ucsc.edu/docs/user/CGHubUserGuide.pdf).
+* Added optional param `k-timeout-min` to `gnos_upload_vcf.pl`, defaults to 60. This is passed to gtupload as the `-k` param.
 
 # 2.0.5
 
