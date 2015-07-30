@@ -34,6 +34,13 @@ use GNOS::Download;
 my ($pem, $url, $file);
 my $timeout_min = 60;
 my $retries = 30;
+my $max_children = 0;
+my $rate_limit_mbytes = 0;
+my $k_timeout_min = 0;
+
+if (scalar(@ARGV) == 0) {
+  die "USAGE: $0 --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--ktimeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]\n";
+}
 
 GetOptions (
 "pem=s" => \$pem,
@@ -41,10 +48,13 @@ GetOptions (
 "file=s" => \$file,
 "retries=i" => \$retries,
 "timeout-min=i" => \$timeout_min,
+"max-children=i" => \$max_children,
+"rate-limit-mbytes=i" => \$rate_limit_mbytes,
+"ktimeout=i" => \$k_timeout_min,
 );
 
 say "FILE: $file";
 
 # will return 0 on success, not 0 on failure
-my $ret_val = GNOS::Download->run_download($pem, $url, $file, $retries, $timeout_min);
+my $ret_val = GNOS::Download->run_download($pem, $url, $file, $retries, $timeout_min, $max_children, $rate_limit_mbytes, $k_timeout_min);
 exit ($ret_val);

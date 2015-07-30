@@ -1,6 +1,12 @@
 # Overview
 
-These tool is designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.
+This repository contains several GNOS tool wrappers that attempt to make it more
+robust to download and upload data for the PCAWG project.
+
+The download wrapper monitors download progress and automatically kills and resumes
+if the download is stuck.
+
+The upload tools are designed to upload one or more VCF/tar.gz/index files produced during variant calling.  They are designed to be called as a step in a workflow or manually if needed.  gnos_upload_vcf.pl uploads files to a gnos repository and synapse_upload_vcf uploads files to the NCI Jamboree site and adds metadata and provenance to Synapse.
 
 These tool needs to produce VCF uploads that conform to the PanCancer VCF upload spec, see https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 
@@ -10,6 +16,14 @@ These tool needs to produce VCF uploads that conform to the PanCancer VCF upload
 ## Availability
 
 You can find these tools pre-installed in a docker container, see [pancancer_upload_download](https://github.com/ICGC-TCGA-PanCancer/pancancer_upload_download).
+
+# GNOS Download
+
+This is a simple wrapper around gtdownload that attempts to restart the process if download
+progress is not made in the timeout specified.  This is in addition to the `-k` GNOS parameter
+that will cause gtdownload to exist if inactive for a certain period of time.
+
+    USAGE: gnos_download_file.pl --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--ktimeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]
 
 # GNOS upload
 
