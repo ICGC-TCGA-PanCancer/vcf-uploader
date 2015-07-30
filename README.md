@@ -23,7 +23,7 @@ This is a simple wrapper around gtdownload that attempts to restart the process 
 progress is not made in the timeout specified.  This is in addition to the `-k` GNOS parameter
 that will cause gtdownload to exist if inactive for a certain period of time.
 
-    USAGE: gnos_download_file.pl --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--ktimeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]
+    USAGE: gnos_download_file.pl --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--k-timeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]
 
 # GNOS upload
 
@@ -115,6 +115,7 @@ The parameters:
      [--metadata-paths <local_paths_for_specimen-level_aligned_BAM_xml_comma_sep> ]
      # the rest are optional
      [--timeout-min <20>]
+     [--k-timeout-min <60>]
      [--retries <3>]
      [--seqware-version <seqware_version_workflow_compiled_with>]
      [--description-file <file_path_for_description_txt>]

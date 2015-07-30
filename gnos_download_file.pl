@@ -39,7 +39,7 @@ my $rate_limit_mbytes = 0;
 my $k_timeout_min = 0;
 
 if (scalar(@ARGV) == 0) {
-  die "USAGE: $0 --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--ktimeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]\n";
+  die "USAGE: $0 --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--k-timeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]\n";
 }
 
 GetOptions (
@@ -50,7 +50,7 @@ GetOptions (
 "timeout-min=i" => \$timeout_min,
 "max-children=i" => \$max_children,
 "rate-limit-mbytes=i" => \$rate_limit_mbytes,
-"ktimeout=i" => \$k_timeout_min,
+"k-timeout=i" => \$k_timeout_min,
 );
 
 say "FILE: $file";
