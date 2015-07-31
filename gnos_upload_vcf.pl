@@ -44,6 +44,7 @@ my $cooldown = 1;
 my $retries = 3;
 # retries timeout in min
 my $timeout_min = 20;
+my $k_timeout_min = 60;
 
 my $vcfs = "";
 my $md5_file = "";
@@ -140,6 +141,7 @@ GetOptions(
     "vm-location-code=s"         => \$vm_location_code,
     "uuid=s"                     => \$uuid,
     "timeout-min=i"              => \$timeout_min,
+    "k-timeout-min=i"            => \$k_timeout_min,
     "retries=i"                  => \$retries,
     "help"                       => \$help,
     "workflow-file-subset=s"     => \$workflow_file_subset,
@@ -287,6 +289,7 @@ sub get_usage {
      # the rest are optional
      [--timeout-min <20>]
      [--retries <3>]
+     [--k-timeout-min <60>]
      [--seqware-version <seqware_version_workflow_compiled_with>]
      [--description-file <file_path_for_description_txt>]
      [--study-refname-override <study_refname_override>]
@@ -439,7 +442,7 @@ sub upload_submission {
 
     unless ( $test || $skip_upload ) {
         die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-	return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown) );
+	return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown, $k_timeout_min) );
     }
 
     # now make an archive tarball if requested
