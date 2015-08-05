@@ -228,7 +228,7 @@ For the TCGA samples (which are most of the 60) this should be “tcga\_pancance
 
 ## Stuck Uploads
 
-On occasional (the specific circumstances are unclear as to whether this is a client or server issue), uploads will stall. To diagnose this, you can find the log that is generated for a specific run.  
+On occasion (the specific circumstances are unclear as to whether this is a client or server issue), uploads will stall. To diagnose this, you can find the log that is generated for a specific run.  
 
     [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ tail -n 100 gtupload-2015-08-05-01-20-41.log
     08/05 13:55:39.033 Normal:  632fef40-ef8d-4c0a-8d32-a6b7f03546ab (https://gttracker-ebi.annailabs.com:21111/tracker.php/announce) sending announce (none), infohash:  75ad485d3bf72fa7aed0c8155ff4a0a717f3355e
@@ -255,8 +255,11 @@ If it looks stuck like this, you can use top to identify the perl wrapper script
 
 If executed through SeqWare, the workflow will then receive a correct non-zero exit code and retry the upload. The number of times SeqWare will retry is based on the ~/.seqware/settings file (normally 5 by default if not specified in that file). 
 
-You can verify by looking in top again and you should see a new gtupload process with a different PID. 
+You can verify by looking in top again and you should see a new gtupload process with a different PID.
 
+    [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ top -c
+    ...                       
+    32687 ubuntu    20   0  190048  45732  10372 D  44.5  0.1   0:04.39 gtupload -l gtupload-2015-08-05-14-01-11.log -v -c /home/ubuntu/.gnos/gnos.pem -u ./manifest.xml
 
 
 ## To Do
