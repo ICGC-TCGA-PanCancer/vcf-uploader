@@ -222,7 +222,42 @@ refname defaults to “icgc_pancancer_vcf” but can be overridden by a paramete
 
 ### Values for the Core 60 Donors
 
-For the TCGA samples (which are most of the 60) this should be “tcga_pancancer_vcf_test”.  For the ICGC samples its “icgc_pancancer_vcf_test”.  Given the churn that happened last time with the alignment workflow I think it makes sense to keep the 60 in the “test” studies and switch over to the real one once the full set of donors are running.
+For the TCGA samples (which are most of the 60) this should be “tcga\_pancancer\_vcf\_test”.  For the ICGC samples its “icgc\_pancancer\_vcf\_test”.  Given the churn that happened last time with the alignment workflow I think it makes sense to keep the 60 in the “test” studies and switch over to the real one once the full set of donors are running.
+
+# Troubleshooting
+
+## Stuck Uploads
+
+On occasional (the specific circumstances are unclear as to whether this is a client or server issue), uploads will stall. To diagnose this, you can find the log that is generated for a specific run.  
+
+    [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ tail -n 100 gtupload-2015-08-05-01-20-41.log
+    08/05 13:55:39.033 Normal:  632fef40-ef8d-4c0a-8d32-a6b7f03546ab (https://gttracker-ebi.annailabs.com:21111/tracker.php/announce) sending announce (none), infohash:  75ad485d3bf72fa7aed0c8155ff4a0a717f3355e
+    08/05 13:55:39.083 Normal:  632fef40-ef8d-4c0a-8d32-a6b7f03546ab (https://gttracker-ebi.annailabs.com:21111/tracker.php/announce) received peers: 0, infohash:  75ad485d3bf72fa7aed0c8155ff4a0a717f3355e
+    08/05 13:55:43.389 Normal:  Status: 0 bytes uploaded (0.000% complete) current rate:
+    08/05 13:55:48.396 Normal:  Status: 0 bytes uploaded (0.000% complete) current rate:
+    08/05 13:55:53.403 Normal:  Status: 0 bytes uploaded (0.000% complete) current rate:
+    08/05 13:55:58.410 Normal:  Status: 0 bytes uploaded (0.000% complete) current rate:
+
+If it looks stuck like this, you can use top to identify the perl wrapper script and gtupload process. *Make sure that you kill the perl script first*. If you kill the actual gtupload process, it will report an exit code of zero as if there were no problems and the workflow will immediately proceed onwards. 
+
+    [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ top -c
+    ...                                                   
+     6236 ubuntu    20   0 19.830g 210928   2444 S   0.0  0.3  17:11.87 java -cp pancancer-arch-3-1.1-beta.3.jar info.pancancer.arch3.worker.Worker --uuid i-3108bb9c --config workerConfig.ini --pidFile /var/run/arch+
+     6352 ubuntu    20   0 19.179g 134300   2600 S   0.0  0.2   6:26.44 java io.seqware.cli.Main bundle launch --dir /workflow --ini /ini --no-metadata --engine whitestar
+    13910 ubuntu    20   0 2133716  29120   8488 S   0.0  0.0   0:16.64 /workflow/Workflow_Bundle_BWA/2.6.5/bin/jre1.7.0_51/bin/java -Xmx500M -classpath /workflow/Workflow_Bundle_BWA/2.6.5/lib/seqware-distribution-1+
+     1128 syslog    20   0  260460  27216    860 S   0.0  0.0   0:14.62 rsyslogd
+    13932 ubuntu    20   0   75980  22404   2984 S   0.0  0.0   0:59.87 perl -I/workflow/Workflow_Bundle_BWA/2.6.5/bin/gt-download-upload-wrapper-2.0.10/lib /workflow/Workflow_Bundle_BWA/2.6.5/scripts/gnos_upload_da+
+     6047 sensu     20   0 1435896  20320   2868 S   0.0  0.0  16:15.51 /opt/sensu/embedded/bin/ruby /opt/sensu/bin/sensu-client -b -c /etc/sensu/config.json -d /etc/sensu/conf.d -e /etc/sensu/extensions -p /var/run+
+    13965 ubuntu    20   0  382828  15952  12600 S   0.0  0.0  35:20.50 gtupload -l gtupload-2015-08-05-01-20-41.log -v -c /home/ubuntu/.gnos/gnos.pem -u ./manifest.xml
+    ....
+    [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ kill -9 13932
+    [WORKER] ubuntu@i-3108bb9c:/datastore/oozie-68bd43b3-278d-4f9c-a405-190d3819656f/data/632fef40-ef8d-4c0a-8d32-a6b7f03546ab$ kill -9 13965
+
+If executed through SeqWare, the workflow will then receive a correct non-zero exit code and retry the upload. The number of times SeqWare will retry is based on the ~/.seqware/settings file (normally 5 by default if not specified in that file). 
+
+You can verify by looking in top again and you should see a new gtupload process with a different PID. 
+
+
 
 ## To Do
 
