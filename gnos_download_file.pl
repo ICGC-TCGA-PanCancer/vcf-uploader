@@ -37,9 +37,10 @@ my $retries = 30;
 my $max_children = 0;
 my $rate_limit_mbytes = 0;
 my $k_timeout_min = 0;
+my $min_mbyte_download_rate = 0;
 
 if (scalar(@ARGV) == 0) {
-  die "USAGE: $0 --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--k-timeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>]\n";
+  die "USAGE: $0 --pem <pem_path> --url <download_gnos_url> --file <output_file_to_check> [--retries 30] [--timeout-min 60] [--max-children <gtdownload_default>] [--rate-limit-mbytes <gtdownload_default>] [--k-timeout <minutes_of_inactivity_to_abort_recommend_less_than_timeout_if_you_want_this_to_be_used>] [--min-mbyte-download-rate <mbyte_per_second_min>]\n";
 }
 
 GetOptions (
@@ -51,10 +52,11 @@ GetOptions (
 "max-children=i" => \$max_children,
 "rate-limit-mbytes=i" => \$rate_limit_mbytes,
 "k-timeout=i" => \$k_timeout_min,
+"min-mbyte-download-rate=i" => \$min_mbyte_download_rate,
 );
 
 say "FILE: $file";
 
 # will return 0 on success, not 0 on failure
-my $ret_val = GNOS::Download->run_download($pem, $url, $file, $retries, $timeout_min, $max_children, $rate_limit_mbytes, $k_timeout_min);
+my $ret_val = GNOS::Download->run_download($pem, $url, $file, $retries, $timeout_min, $max_children, $rate_limit_mbytes, $k_timeout_min, $min_mbyte_download_rate);
 exit ($ret_val);
