@@ -52,7 +52,7 @@ GetOptions (
 "max-children=i" => \$max_children,
 "rate-limit-mbytes=i" => \$rate_limit_mbytes,
 "k-timeout=i" => \$k_timeout_min,
-"min-mbyte-download-rate=i" => \$min_mbyte_download_rate,
+"min-mbyte-download-rate=f" => \$min_mbyte_download_rate,
 );
 
 say "FILE: $file";
