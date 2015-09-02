@@ -1,3 +1,9 @@
+# 2.0.7
+
+udpated the gt-download-upload-wrapper to version 2.0.13
+* added minimal transfer speed param for download
+* added final check for "100%" in the upload log before calling upload complete in order to catch situations where an upload isn't actually finished
+
 # 2.0.6
 
 * Added the following parameters to the `gnos_download_file.pl` script. If not specified the default for `gtdownload` will be used:
