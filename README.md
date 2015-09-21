@@ -37,6 +37,9 @@ If you are using the Docker version everything will be setup for you.  If not, y
 Or on an Ubuntu 12.04 host you would install via:
 
     sudo apt-get install libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl
+ 
+On Ubuntu 14.04 you would install:
+
     sudo apt-get install -y python-dev python-pip libxml-dom-perl libxml-xpath-perl libjson-perl libxml-libxml-perl time libdata-uuid-libuuid-perl libcarp-always-perl libipc-system-simple-perl libdata-uuid-perl curl vim samtools tabix
 
 Once these are installed you can execute the script with the command below. For workflows and VMs used in the project, these dependencies will be pre-installed on the VM running the variant calling workflows.
