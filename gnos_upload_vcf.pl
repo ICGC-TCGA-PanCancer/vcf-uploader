@@ -97,6 +97,7 @@ my $vm_location_code   = "unknown";
 my $help = 0;
 my $workflow_file_subset = "";
 my $related_file_subset_uuids = "";
+my $gto_only = 0;
 
 # TODO: check the argument counts here
 if ( scalar(@ARGV) == 0 ) {
@@ -146,6 +147,7 @@ GetOptions(
     "help"                       => \$help,
     "workflow-file-subset=s"     => \$workflow_file_subset,
     "related-file-subset-uuids=s" => \$related_file_subset_uuids,
+    "gto-only"                   => \$gto_only
 );
 
 # if --help
@@ -307,6 +309,7 @@ sub get_usage {
      [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
      [--uuid <uuis_for_use_as_upload_analysis_id>]
      [--test]
+     [--gto-only Pass the --gto-only flag to gtupload. GTO file will be generated, but no upload will occur.]
      \n"
 }
 
@@ -436,15 +439,33 @@ sub upload_submission {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
         return 1 if ( run($cmd) );
     }
+    # Need to add code here to check for --gto-only and not do the real upload if it's present.
+    if ( $gto_only )
+    {
+      say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed."
+      my @now = localtime();
+      $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
+                               $now[5]+1900, $now[4]+1, $now[3],
+                               $now[2],      $now[1],   $now[0]);
 
-    # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
-    modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
+      # BUG: Adam, you are already in this directory, $sub_path does not exist!
+      #$log_filepath = "$sub_path/gtupload-$time_stamp.log";
+      $log_filepath = "gtupload-$time_stamp.log";
+      $gto_only_cmd = "gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
 
-    unless ( $test || $skip_upload ) {
-        die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-	return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown, $k_timeout_min) );
+      run($gto_only_cmd);
     }
+    else
+    {
+      # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
+      modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
+      unless ( $test || $skip_upload ) {
+          die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
+
+      return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown, $k_timeout_min) );
+      }
+    }
     # now make an archive tarball if requested
     if ($upload_archive ne "") {
       return 1 if (run("mkdir -p $upload_archive/$uuid && rsync -Lrauv $sub_path/* $upload_archive/$uuid/ && cd $upload_archive && tar zcf $uuid.tar.gz $uuid"));
