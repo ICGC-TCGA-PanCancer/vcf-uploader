@@ -309,7 +309,7 @@ sub get_usage {
      [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
      [--uuid <uuis_for_use_as_upload_analysis_id>]
      [--test]
-     [--gto-only Pass the --gto-only flag to gtupload. GTO file will be generated, but no upload will occur. This will cause cgsubmit to run so that the manifest.xml file can be generated, even if --skip-upload is specified.]
+     [--gto-only Pass the --gto-only flag to gtupload. GTO file will be generated, but no upload will occur. Do NOT use this flag with --skip-validate.]
      \n"
 }
 
@@ -432,46 +432,31 @@ sub validate_submission {
 # TODO: need to standardize on the return values... 1 or 0!!
 sub upload_submission {
     my ($sub_path) = @_;
-    my $cg_submit_done = 0;
     my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
     say "UPLOADING METADATA CMD: $cmd";
     if ( !$test && !$skip_upload ) {
         croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
         return 1 if ( run($cmd) );
-        $cg_submit_done = 1;
     }
+
+    # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
+    modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
     # Need to add code here to check for --gto-only. If it's there, call cgsubmit to generate manifest.xml,
     # then call `gtupload --gt-only...` and DO NOT call GNOS::Upload->run_upload().
     if ( $gto_only && !$test )
     {
-      # cgsubmit will be done earlier if the user did not specify --skip-upload. But in case they
-      # did specify --skip-upload AND --gto-only, we still need to run cgsubmit so that we can
-      # generate the gto file without doing the upload.
-      if ($cg_submit_done == 0)
-      {
-        say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed.";
-        croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
-        return 1 if ( run($cmd) );
-      }
+      say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed.";
       my @now = localtime();
       my $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
                                $now[5]+1900, $now[4]+1, $now[3],
                                $now[2],      $now[1],   $now[0]);
-
       my $log_filepath = "gtupload-$time_stamp.log";
-
-      # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
-      modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
-
       my $gto_only_cmd = "cd $sub_path ; gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
-
       run($gto_only_cmd);
     }
     else
     {
-      # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
-      modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
       unless ( $test || $skip_upload ) {
           die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
