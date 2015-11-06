@@ -97,6 +97,7 @@ my $vm_location_code   = "unknown";
 my $help = 0;
 my $workflow_file_subset = "";
 my $related_file_subset_uuids = "";
+my $gto_only = 0;
 
 # TODO: check the argument counts here
 if ( scalar(@ARGV) == 0 ) {
@@ -146,6 +147,7 @@ GetOptions(
     "help"                       => \$help,
     "workflow-file-subset=s"     => \$workflow_file_subset,
     "related-file-subset-uuids=s" => \$related_file_subset_uuids,
+    "gto-only"                   => \$gto_only
 );
 
 # if --help
@@ -307,6 +309,7 @@ sub get_usage {
      [--upload-archive <path_of_dir_to_copy_upload_to_and_make_tarball_uuid.tar.gz>]
      [--uuid <uuis_for_use_as_upload_analysis_id>]
      [--test]
+     [--gto-only Pass the --gto-only flag to gtupload. GTO file will be generated, but no upload will occur. Do NOT use this flag with --skip-validate.]
      \n"
 }
 
@@ -429,7 +432,6 @@ sub validate_submission {
 # TODO: need to standardize on the return values... 1 or 0!!
 sub upload_submission {
     my ($sub_path) = @_;
-
     my $cmd = "cgsubmit -s $upload_url -o metadata_upload.log -u $sub_path -vv -c $key";
     say "UPLOADING METADATA CMD: $cmd";
     if ( !$test && !$skip_upload ) {
@@ -440,11 +442,28 @@ sub upload_submission {
     # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
     modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
 
-    unless ( $test || $skip_upload ) {
-        die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
-	return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown, $k_timeout_min) );
+    # Need to add code here to check for --gto-only. If it's there, call cgsubmit to generate manifest.xml,
+    # then call `gtupload --gt-only...` and DO NOT call GNOS::Upload->run_upload().
+    if ( $gto_only && !$test )
+    {
+      say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed.";
+      my @now = localtime();
+      my $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
+                               $now[5]+1900, $now[4]+1, $now[3],
+                               $now[2],      $now[1],   $now[0]);
+      my $log_filepath = "gtupload-$time_stamp.log";
+      my $gto_only_cmd = "cd $sub_path ; gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
+      run($gto_only_cmd);
     }
+    else
+    {
 
+      unless ( $test || $skip_upload ) {
+          die "ABORT: No gtupload installed, aborting!" if ( system("which gtupload") );
+
+      return 1 if ( GNOS::Upload->run_upload($sub_path, $key, $retries, $cooldown, $k_timeout_min) );
+      }
+    }
     # now make an archive tarball if requested
     if ($upload_archive ne "") {
       return 1 if (run("mkdir -p $upload_archive/$uuid && rsync -Lrauv $sub_path/* $upload_archive/$uuid/ && cd $upload_archive && tar zcf $uuid.tar.gz $uuid"));
@@ -1119,6 +1138,7 @@ sub download_metadata {
         my $xml_path = download_url( $url,  "xml2/data_$i.xml", $file_path );
         $metad->{$url} = parse_metadata($xml_path);
     }
+    #TODO: Error handline: This should thrown an error if there's no metadata at the metadata URL!!
     return ($metad);
 }
 
