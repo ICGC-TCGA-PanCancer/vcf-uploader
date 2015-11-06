@@ -443,15 +443,16 @@ sub upload_submission {
     if ( $gto_only )
     {
       say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed.";
+      croak "ABORT: No cgsubmit installed, aborting!" if( system("which cgsubmit"));
+      return 1 if ( run($cmd) );
+
       my @now = localtime();
       my $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
                                $now[5]+1900, $now[4]+1, $now[3],
                                $now[2],      $now[1],   $now[0]);
 
-      # BUG: Adam, you are already in this directory, $sub_path does not exist!
-      #$log_filepath = "$sub_path/gtupload-$time_stamp.log";
-      my $log_filepath = "gtupload-$time_stamp.log";
-      my $gto_only_cmd = "gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
+      my $log_filepath = "$sub_path/gtupload-$time_stamp.log";
+      my $gto_only_cmd = "cd $sub_path ; gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
 
       run($gto_only_cmd);
     }
