@@ -442,16 +442,16 @@ sub upload_submission {
     # Need to add code here to check for --gto-only and not do the real upload if it's present.
     if ( $gto_only )
     {
-      say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed."
+      say "GTO Only mode is set - GTO file will be generated, but no upload will be perfomed.";
       my @now = localtime();
-      $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
+      my $time_stamp = sprintf("%04d-%02d-%02d-%02d-%02d-%02d",
                                $now[5]+1900, $now[4]+1, $now[3],
                                $now[2],      $now[1],   $now[0]);
 
       # BUG: Adam, you are already in this directory, $sub_path does not exist!
       #$log_filepath = "$sub_path/gtupload-$time_stamp.log";
-      $log_filepath = "gtupload-$time_stamp.log";
-      $gto_only_cmd = "gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
+      my $log_filepath = "gtupload-$time_stamp.log";
+      my $gto_only_cmd = "gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
 
       run($gto_only_cmd);
     }
