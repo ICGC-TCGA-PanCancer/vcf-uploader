@@ -459,7 +459,11 @@ sub upload_submission {
                                $now[5]+1900, $now[4]+1, $now[3],
                                $now[2],      $now[1],   $now[0]);
 
-      my $log_filepath = "$sub_path/gtupload-$time_stamp.log";
+      my $log_filepath = "gtupload-$time_stamp.log";
+
+      # we need to hack the manifest.xml to drop any files that are inputs and I won't upload again
+      modify_manifest_file( "$sub_path/manifest.xml", $sub_path ) unless ($test || $skip_upload);
+
       my $gto_only_cmd = "cd $sub_path ; gtupload --gto-only -l $log_filepath -v -c $key -u ./manifest.xml";
 
       run($gto_only_cmd);
@@ -1149,6 +1153,7 @@ sub download_metadata {
         my $xml_path = download_url( $url,  "xml2/data_$i.xml", $file_path );
         $metad->{$url} = parse_metadata($xml_path);
     }
+    #TODO: Error handline: This should thrown an error if there's no metadata at the metadata URL!!
     return ($metad);
 }
 
