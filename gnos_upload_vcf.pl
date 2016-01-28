@@ -921,7 +921,7 @@ END
           $curr_index = $1;
         }
         $analysis_xml .=
-    "          <FILE filename=\"$curr_bam\" filetype=\"bam\" checksum_method=\"MD5\" checksum=\"bam_checksums[$i]\" />\n";
+    "          <FILE filename=\"$curr_bam\" filetype=\"bam\" checksum_method=\"MD5\" checksum=\"$bam_checksums[$i]\" />\n";
         $analysis_xml .=
     "          <FILE filename=\"$curr_index\" filetype=\"bai\" checksum_method=\"MD5\" checksum=\"$bai_checksums[$i]\" />\n";
     }
