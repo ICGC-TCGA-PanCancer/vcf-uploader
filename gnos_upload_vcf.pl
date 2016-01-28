@@ -902,6 +902,22 @@ END
 "          <FILE filename=\"$curr_index\" filetype=\"idx\" checksum_method=\"MD5\" checksum=\"$idx_checksums[$i]\" />\n";
     }
 
+    # BAM files
+    for ( my $i = 0 ; $i < scalar(@bam_arr) ; $i++ ) {
+        my $curr_bam = $bam_arr[$i];
+        if($bam_arr[$i] =~ /^\S*\/([^\/]+)$/) {
+          $curr_bam = $1;
+        }
+        my $curr_index = $bams_bai_arr[$i];
+        if($bams_bai_arr[$i] =~ /^\S*\/([^\/]+)$/) {
+          $curr_index = $1;
+        }
+        $analysis_xml .=
+    "          <FILE filename=\"$curr_bam\" filetype=\"bam\" checksum_method=\"MD5\" checksum=\"bam_checksums[$i]\" />\n";
+        $analysis_xml .=
+    "          <FILE filename=\"$curr_index\" filetype=\"bai\" checksum_method=\"MD5\" checksum=\"$bai_checksums[$i]\" />\n";
+    }
+
     # Tarball files
     for ( my $i = 0 ; $i < scalar(@tarball_arr) ; $i++ ) {
         my $curr_tar = $tarball_arr[$i];
