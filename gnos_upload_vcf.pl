@@ -436,6 +436,8 @@ sub generate_output_json {
         process_files( $r, $target, \@vcf_arr );
         process_files( $r, $target, \@vcfs_idx_arr );
         process_files( $r, $target, \@tarball_arr );
+        process_files( $r, $target, \@bam_arr );
+        process_files( $r, $target, \@bams_bai_arr );
 
         push( @{ $d->{'workflow_outputs'} }, $r );
     }
