@@ -99,6 +99,11 @@ my $workflow_file_subset = "";
 my $related_file_subset_uuids = "";
 my $gto_only = 0;
 
+my $bams = "";
+my $bam_md5sum_files = "";
+my $bam_bais = "";
+my $bam_bais_md5sum_files = "";
+
 # TODO: check the argument counts here
 if ( scalar(@ARGV) == 0 ) {
     die get_usage();
@@ -151,7 +156,7 @@ GetOptions(
     "bams:s"                       => \$bams,
     "bam-md5sum-files:s"           => \$bam_md5sum_files,
     "bam-bais:s"                   => \$bam_bais,
-    "bam_bai-md5sum-files:s"           => \$bam_bais_md5sum_files,
+    "bam_bai-md5sum-files:s"           => \$bam_bais_md5sum_files
 );
 
 # if --help
@@ -184,11 +189,12 @@ my @bam_arr          = split /,/, $bams;
 my @md5_file_arr     = split /,/, $md5_file;
 my @bam_md5_file_arr = split /,/, $bam_md5sum_files;
 my @vcfs_idx_arr     = split /,/, $vcfs_idx;
-my @bams_bai_arr     = split /,/, $bams_bais;
+my @bams_bai_arr     = split /,/, $bam_bais;
 my @md5_idx_file_arr = split /,/, $md5_idx_file;
 my @bam_bai_md5_arr  = split /,/, $bam_bais_md5sum_files;
 my @vcf_checksums;
 my @bam_checksums;
+my @bai_checksums;
 my @idx_checksums;
 my @tarball_checksums;
 my @tarball_arr          = split /,/, $tarballs;
