@@ -147,7 +147,11 @@ GetOptions(
     "help"                       => \$help,
     "workflow-file-subset=s"     => \$workflow_file_subset,
     "related-file-subset-uuids=s" => \$related_file_subset_uuids,
-    "gto-only"                   => \$gto_only
+    "gto-only"                   => \$gto_only,
+    "bams:s"                       => \$bams,
+    "bam-md5sum-files:s"           => \$bam_md5sum_files,
+    "bam-bais:s"                   => \$bam_bais,
+    "bam_bai-md5sum-files:s"           => \$bam_bais_md5sum_files,
 );
 
 # if --help
@@ -176,10 +180,15 @@ my $final_touch_file = $output_dir."upload_complete.txt";
 
 # parse values
 my @vcf_arr          = split /,/, $vcfs;
+my @bam_arr          = split /,/, $bams;
 my @md5_file_arr     = split /,/, $md5_file;
+my @bam_md5_file_arr = split /,/, $bam_md5sum_files;
 my @vcfs_idx_arr     = split /,/, $vcfs_idx;
+my @bams_bai_arr     = split /,/, $bams_bais;
 my @md5_idx_file_arr = split /,/, $md5_idx_file;
+my @bam_bai_md5_arr  = split /,/, $bam_bais_md5sum_files;
 my @vcf_checksums;
+my @bam_checksums;
 my @idx_checksums;
 my @tarball_checksums;
 my @tarball_arr          = split /,/, $tarballs;
@@ -187,12 +196,20 @@ my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 
 # TODO: Sheldon, we'll need more validation here, check each VCF file for headers etc. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 say 'VALIDATING PARAMS';
-die "Must specify at least one VCF or one Tarball!\n"     if (scalar(@tarball_arr) == 0 && scalar(@vcf_arr) == 0);
+die "Must specify at least one VCF or one Tarball!\n"     if ( scalar(@tarball_arr) == 0 && scalar(@vcf_arr) == 0);
 die "VCF and VCF md5sum file count don't match!\n"        if ( scalar(@vcf_arr) != scalar(@md5_file_arr) );
 die "VCF and VCF index count don't match!\n"              if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) );
 die "VCF index and VCF index md5sum count don't match!\n" if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) );
 die "Tarball and Tarball md5sum count don't match!\n"     if ( scalar(@tarball_arr) != scalar(@md5_tarball_file_arr) );
 die "Keyfile $key not found!\n"                           if (!-e $key);
+
+# BAMs should be optional.
+if (scalar (@bam_arr) >0 )
+{
+  die "BAM and BAM md5sum file counts don't match!\n" if ( scalar(@bam_arr) != scalar(@bam_md5_file_arr) );
+  die "BAM and BAM index file counts don't match!\n" if ( scalar(@bam_arr) != scalar(@bams_bai_arr) );
+  die "BAM index and BAM index md5sum file counts don't match!\n" if ( scalar(@bam_bai_md5_arr) != scalar(@bams_bai_arr) );
+}
 
 say 'COPYING FILES TO OUTPUT DIR';
 my $link_method = ($force_copy)? 'rsync -rauv': 'ln -s';
@@ -212,6 +229,30 @@ for ( my $i = 0 ; $i < scalar(@vcf_arr) ; $i++ ) {
     push @idx_checksums, $idx_check;
 
     my @files = ($vcf_arr[$i], $md5_file_arr[$i], $vcfs_idx_arr[$i], $md5_idx_file_arr[$i]);
+
+    foreach my $file (@files) {
+        my @t = split /\//, $file;
+        my $root = $t[scalar(@t)-1];
+        my $command = "$link_method `readlink -f $file` $output_dir/";
+        print "ROOT: $root\n";
+        if (!(-e "$output_dir/$root")) {
+          run($command);
+        }
+    }
+}
+#Now do it for all BAM files
+for ( my $i = 0 ; $i < scalar(@bam_arr) ; $i++ ) {
+    my $bam_check = `cat $bam_md5_file_arr[$i]`;
+    $bam_check =~ s/^\s+|\s+$//g;
+    say "CAT CODE! cat $bam_md5_file_arr[$i]";
+    my $bai_check = `cat $bam_bai_md5_arr[$i]`;
+    $bai_check =~ s/^\s+|\s+$//g;
+    chomp $bam_check;
+    chomp $bai_check;
+    push @bam_checksums, $bam_check;
+    push @bai_checksums, $bai_check;
+
+    my @files = ($bam_arr[$i], $bam_md5_file_arr[$i], $bams_bai_arr[$i], $bam_bai_md5_arr[$i]);
 
     foreach my $file (@files) {
         my @t = split /\//, $file;
@@ -310,6 +351,10 @@ sub get_usage {
      [--uuid <uuis_for_use_as_upload_analysis_id>]
      [--test]
      [--gto-only Pass the --gto-only flag to gtupload. GTO file will be generated, but no upload will occur. Do NOT use this flag with --skip-validate.]
+     [--bams A list of bam files.]
+     [--bam-md5sum-files A comma-separated list of md5sum files that correspond to the BAM files specified with --bam. This is mandatory if you use --bam.]
+     [--bam-bais A comma-separated list of BAM Index files. This is mandatory if you use --bam.]
+     [--bam_bai-md5sum-files A comma-separated list of md5sum files that correspond to the BAM Index files specified with --bam-bais. This is mandatory if you use --bam.]
      \n"
 }
 
