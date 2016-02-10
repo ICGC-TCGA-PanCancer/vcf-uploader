@@ -202,7 +202,7 @@ my @md5_tarball_file_arr = split /,/, $md5_tarball_file;
 
 # TODO: Sheldon, we'll need more validation here, check each VCF file for headers etc. See https://wiki.oicr.on.ca/display/PANCANCER/PCAWG+VCF+Submission+SOP+-+v1.0
 say 'VALIDATING PARAMS';
-die "Must specify at least one VCF or one Tarball!\n"     if ( scalar(@tarball_arr) == 0 && scalar(@vcf_arr) == 0);
+die "Must specify at least one VCF or one Tarball or BAM!\n"     if ( scalar(@tarball_arr) == 0 && scalar(@vcf_arr) == 0 && scalar(@bam_arr) == 0);
 die "VCF and VCF md5sum file count don't match!\n"        if ( scalar(@vcf_arr) != scalar(@md5_file_arr) );
 die "VCF and VCF index count don't match!\n"              if ( scalar(@vcf_arr) != scalar(@vcfs_idx_arr) );
 die "VCF index and VCF index md5sum count don't match!\n" if ( scalar(@vcf_arr) != scalar(@md5_idx_file_arr) );
