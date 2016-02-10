@@ -1,3 +1,13 @@
+# 2.0.9
+* Add functionality to upload BAMs (and corresponding BAI - index files). New CLI options:
+  *  `--bams` - a comma-separated list of BAMs
+  *  `--bam-md5sum-files` - a comma-separated list of MD5sum files of the BAMs listed in "--bams"
+  *  `--bam-bais` - a comma-separated list of index files of the BAMs listed in "--bams"
+  *  `--bam-bai-md5sum-files` - a comma-separated list of MD5sum files of the BAIs listed in "--bam-bais"
+
+# 2.0.8
+* New option `--gto-only`. Will cause gto file to be generated, but will not perform actual upload.
+
 # 2.0.7
 
 udpated the gt-download-upload-wrapper to version 2.0.13
